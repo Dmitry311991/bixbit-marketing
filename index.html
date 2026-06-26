@@ -285,7 +285,7 @@ body.dark .ai-ftr{border-top-color:#2a2a2a}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 
-.cb-cell{width:32px!important;padding:6px 4px!important;text-align:center;vertical-align:middle}
+.cb-cell{width:36px!important;padding:6px 6px!important;text-align:center;vertical-align:middle;flex-shrink:0}
 .row-cb{width:14px;height:14px;cursor:pointer;accent-color:var(--blue)}
 tr.dr.selected td{background:#dce8ff!important}
 body.dark tr.dr.selected td{background:#0d2040!important}
@@ -386,8 +386,8 @@ body.dark .col-add-inp{background:var(--dk-input-bg);border-color:var(--dk-borde
   </div>
   <div class="tbl-wrap">
     <table>
-      <colgroup><col class="cn"><col class="cd"><col class="cr"><col class="cs"><col class="ca"><col class="cb"><col class="cf"><col class="cc"><col class="cx"></colgroup>
-      <thead><tr><th>Задача</th><th>Описание</th><th>Плановый результат</th><th>Статус</th><th>Согласование</th><th>Бюджет</th><th>Файлы</th><th>Комментарии</th><th></th></tr></thead>
+      <colgroup id="planColgroup"><col style="width:36px"><col style="width:15%"><col style="width:17%"><col style="width:15%"><col style="width:10%"><col style="width:9%"><col style="width:8%"><col style="width:10%"><col style="width:9%"><col style="width:40px"></colgroup>
+      <thead id="planThead"><tr><th style="width:36px;text-align:center;padding:8px 4px"><input type="checkbox" id="selectAllCb" title="Выбрать все" style="width:14px;height:14px;cursor:pointer;accent-color:#0040DD"></th><th>Задача</th><th>Описание</th><th>Плановый результат</th><th>Статус</th><th>Согласование</th><th>Бюджет</th><th>Файлы</th><th>Комментарии</th><th></th></tr></thead>
       <tbody id="planBody"></tbody>
     </table>
   </div>
@@ -655,16 +655,25 @@ function updateBulkBar(){
   if (selectedIds.size > 0) {
     bar.classList.add('show');
     document.getElementById('bulkCount').textContent = selectedIds.size + ' задач выбрано';
-    // populate move-to select
     const sel = document.getElementById('bulkMoveSel');
     if (sel) {
       const dirs = [...new Set(periods[pid].tasks.map(t=>t.dir))];
-      sel.innerHTML = '<option value="">→ Перенести в...</option>' 
+      sel.innerHTML = '<option value="">→ Перенести в...</option>'
         + dirs.map(d=>'<option value="'+esc(d)+'">'+esc(d)+'</option>').join('');
     }
   } else {
     bar.classList.remove('show');
   }
+}
+
+function syncMasterCb(){
+  const saCb = document.getElementById('selectAllCb');
+  if (!saCb) return;
+  const total = planRows().length;
+  const sel = selectedIds.size;
+  if (sel === 0) { saCb.indeterminate=false; saCb.checked=false; }
+  else if (sel === total) { saCb.indeterminate=false; saCb.checked=true; }
+  else { saCb.indeterminate=true; saCb.checked=false; }
 }
 
 function selectAll(checked){
@@ -673,6 +682,7 @@ function selectAll(checked){
   document.querySelectorAll('#planBody .row-cb').forEach(cb => cb.checked = checked);
   document.querySelectorAll('#planBody tr.dr').forEach(tr => tr.classList.toggle('selected', checked));
   updateBulkBar();
+  syncMasterCb();
 }
 const periods={
   'q1':{id:'q1',label:'Q1 2026 · Январь – Март',code:'Q1_2026 · JAN–MAR',tasks:RAW_Q1.map(t=>Object.assign({},t))},
@@ -827,8 +837,8 @@ function planRowHTML(t){
     return '<td><textarea class="ce" data-f="'+col.key+'" rows="1" placeholder="'+col.label+'...">'+val+'</textarea></td>';
   }).join('');
   return '<tr class="dr'+(t._late?' overdue':'')+(isSel?' selected':'')+'" data-id="'+t.id+'" draggable="true">'
-    +'<td class="cb-cell"><input type="checkbox" class="row-cb"'+(isSel?' checked':'')+'></td>'
-    +'<td><span class="drag-handle" title="Перетащить">⠿</span><button class="del" title="Удалить">✕</button>'
+    +'<td class="cb-cell" style="width:36px;text-align:center;vertical-align:middle"><input type="checkbox" class="row-cb"'+(isSel?' checked':'')+' style="width:14px;height:14px;cursor:pointer;accent-color:#0040DD"></td>'
+    +'<td><span class="drag-handle" title="Перетащить строку">⠿</span><button class="del" title="Удалить">✕</button>'
     +'<textarea class="ce-name" data-f="name" rows="1" placeholder="Новая задача...">'+esc(t.name)+'</textarea>'
     +'<select class="dir-sel" style="font-size:10px;margin-top:3px;padding:2px 5px;border:1px solid #E6E6E6;border-radius:4px;background:#fff;width:100%;outline:none;cursor:pointer">'+dirOpts+'</select>'
     +'</td>'
@@ -854,6 +864,7 @@ function bindPlanRow(tr){
       if(this.checked){selectedIds.add(id);}else{selectedIds.delete(id);}
       tr.classList.toggle('selected',this.checked);
       updateBulkBar();
+      syncMasterCb();
     });
   }
   tr.querySelectorAll('textarea.ce,textarea.ce-name').forEach(function(el){
@@ -925,17 +936,19 @@ function bindPlanRow(tr){
 
 function buildPlanHeader(){
   const activeCols = getActiveCols();
-  const baseColspan = 2 + activeCols.length + 1; // cb + task + cols + actions
+  const baseColspan = 2 + activeCols.length + 1;
   // colgroup
-  let cg='<col style="width:32px">'; // checkbox
-  cg+='<col style="width:15%">'; // task name
+  let cg='<col style="width:36px">';
+  cg+='<col style="width:15%">';
   activeCols.forEach(function(col){
     const w={desc:'17%',res_plan:'15%',st:'10%',agree:'9%',budget:'8%',files:'10%',comments:'9%'}[col.key]||'10%';
     cg+='<col style="width:'+w+'">';
   });
-  cg+='<col style="width:40px">'; // actions
+  cg+='<col style="width:40px">';
   // thead
-  let th='<tr>'    +'<th class="cb-cell"><input type="checkbox" id="selectAllCb" title="Выбрать все" style="width:14px;height:14px;cursor:pointer;accent-color:var(--blue)"></th>'    +'<th>Задача</th>';
+  let th='<tr>'
+    +'<th style="width:36px;text-align:center;padding:8px 4px"><input type="checkbox" id="selectAllCb" title="Выбрать все" style="width:14px;height:14px;cursor:pointer;accent-color:#0040DD"></th>'
+    +'<th>Задача</th>';
   activeCols.forEach(function(col){ th+='<th>'+col.label+'</th>'; });
   th+='<th></th></tr>';
   return {cg:cg, th:th, colspan:baseColspan};
@@ -952,10 +965,15 @@ function renderPlanTable(){
   if(tbl){
     tbl.querySelector('colgroup').innerHTML=hdr.cg;
     tbl.querySelector('thead').innerHTML=hdr.th;
-    // rebind select-all
-    const saCb=document.getElementById('selectAllCb');
-    if(saCb) saCb.addEventListener('change',function(){selectAll(this.checked);});
   }
+  // Rebind select-all checkbox (always present in header)
+  setTimeout(function(){
+    const saCb=document.getElementById('selectAllCb');
+    if(saCb){
+      saCb.replaceWith(saCb.cloneNode(true)); // remove old listeners
+      document.getElementById('selectAllCb').addEventListener('change',function(){selectAll(this.checked);});
+    }
+  },0);
   
   // Inject/update bulk bar
   let bar=document.getElementById('bulkBar');
