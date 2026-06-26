@@ -188,11 +188,24 @@ tr.dr:last-child td{border-bottom:none}
 .s-des{background:var(--gray50);color:var(--gray600);border-color:var(--gray100)}
 .s-no{background:#fef0f0;color:#9b1c1c;border-color:#fbb}
 .s-moved{background:#f3e8ff;color:#6b21a8;border-color:#d8b4fe}
-.fl{display:flex;flex-direction:column;gap:3px}
-.fl a{display:inline-flex;align-items:center;gap:4px;color:var(--blue);text-decoration:none;font-size:11px;font-weight:500;padding:2px 6px;border-radius:4px;background:#EEF3FF;border:1px solid #b3c8ff;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
-.fl a:hover{background:#dce8ff;text-decoration:none}
-body.dark .fl a{background:var(--dk-hover);border-color:var(--dk-border);color:var(--dk-accent)}
-body.dark .fl a:hover{background:#1e3d6e}
+.fl{display:flex;flex-direction:column;gap:4px}
+.fl-link{display:inline-flex;align-items:center;gap:4px;max-width:100%}
+.fl-link a{display:inline-flex;align-items:center;gap:4px;color:var(--blue);text-decoration:none;font-size:11px;font-weight:500;padding:2px 7px;border-radius:4px;background:#EEF3FF;border:1px solid #b3c8ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.fl-link a:hover{background:#dce8ff}
+.fl-rm{background:none;border:none;cursor:pointer;color:#C0BDC0;font-size:11px;padding:1px 3px;line-height:1;border-radius:3px;flex-shrink:0}
+.fl-rm:hover{color:var(--mag);background:#fce8f3}
+.fl-add{display:flex;gap:4px;align-items:center;margin-top:2px}
+.fl-input{font-size:10px;padding:3px 6px;border:1px solid var(--gray100);border-radius:4px;color:var(--gray600);background:#fff;flex:1;min-width:0;outline:none;font-family:inherit}
+.fl-input:focus{border-color:var(--blue);background:#EEF3FF}
+.fl-input::placeholder{color:#D0CDD0}
+.fl-btn{font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid var(--gray100);background:#fff;color:var(--gray600);cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0}
+.fl-btn:hover{border-color:var(--blue);color:var(--blue);background:#EEF3FF}
+body.dark .fl-link a{background:var(--dk-hover);border-color:var(--dk-border);color:var(--dk-accent)}
+body.dark .fl-link a:hover{background:#1e3d6e}
+body.dark .fl-input{background:var(--dk-input-bg);border-color:var(--dk-border);color:var(--dk-text2)}
+body.dark .fl-input:focus{background:var(--dk-input-hl);border-color:var(--dk-accent)}
+body.dark .fl-btn{background:var(--dk-surface);border-color:var(--dk-border);color:var(--dk-text2)}
+body.dark .fl-btn:hover{border-color:var(--dk-accent);color:var(--dk-accent)}
 .fl a:hover{text-decoration:underline}
 .fi{font-size:10px;padding:3px 5px;border:1px solid transparent;border-radius:4px;color:var(--gray600);background:transparent;width:100%;outline:none;font-family:inherit}
 .fi:hover{border-color:var(--gray100);background:#fff}
@@ -545,9 +558,56 @@ function shortUrl(url){
   try{
     const u=new URL(url);
     const host=u.hostname.replace('www.','');
-    const path=u.pathname.length>1?u.pathname.slice(1,20)+(u.pathname.length>20?'…':''):'';
+    const path=u.pathname.length>1?u.pathname.slice(1,18)+(u.pathname.length>18?'…':''):'';
     return path?host+'/'+path:host;
-  }catch(e){return url.length>30?url.slice(0,28)+'…':url;}
+  }catch(e){return url.length>28?url.slice(0,26)+'…':url;}
+}
+
+// Render multi-link file cell
+function renderFileCell(taskId) {
+  const task = periods[pid].tasks.find(t=>t.id===taskId);
+  if (!task) return;
+  const wrap = document.querySelector('.fl-wrap[data-tid="'+taskId+'"]');
+  if (!wrap) return;
+  const links = (task.files||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  let h = '';
+  links.forEach((url,i) => {
+    h += '<div class="fl-link">'
+      +'<a href="'+esc(url)+'" target="_blank" title="'+esc(url)+'">🔗 '+shortUrl(url)+'</a>'
+      +'<button class="fl-rm" data-i="'+i+'" title="Удалить ссылку">✕</button>'
+      +'</div>';
+  });
+  h += '<div class="fl-add">'
+    +'<input class="fl-input" placeholder="https://..." type="url">'
+    +'<button class="fl-btn">+ Добавить</button>'
+    +'</div>';
+  wrap.innerHTML = h;
+  // Bind add button
+  const addBtn = wrap.querySelector('.fl-btn');
+  const addInp = wrap.querySelector('.fl-input');
+  function addLink() {
+    const url = addInp.value.trim();
+    if (!url) return;
+    const cur = (task.files||'').split('\n').map(s=>s.trim()).filter(Boolean);
+    cur.push(url);
+    task.files = cur.join('\n');
+    debounceSave(taskId, pid);
+    addInp.value = '';
+    renderFileCell(taskId);
+  }
+  addBtn.addEventListener('click', addLink);
+  addInp.addEventListener('keydown', e=>{ if(e.key==='Enter'){e.preventDefault();addLink();} });
+  // Bind remove buttons
+  wrap.querySelectorAll('.fl-rm').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const i = +this.dataset.i;
+      const cur = (task.files||'').split('\n').map(s=>s.trim()).filter(Boolean);
+      cur.splice(i, 1);
+      task.files = cur.join('\n');
+      debounceSave(taskId, pid);
+      renderFileCell(taskId);
+    });
+  });
 }
 function parseDeadline(s){
   if(!s) return null;
@@ -627,9 +687,9 @@ function planRowHTML(t){
   const fl=t.files||'';
   const dirs=[...new Set(periods[pid].tasks.map(x=>x.dir))];
   const dirOpts=dirs.map(d=>'<option value="'+esc(d)+'"'+(d===t.dir?' selected':'')+'>'+esc(d)+'</option>').join('');
-  const fileCell='<div class="fl">'
-    +(fl?'<a href="'+esc(fl)+'" target="_blank" title="'+esc(fl)+'">🔗 '+shortUrl(fl)+'</a>':'')
-    +'<input class="fi" data-f="files" value="'+esc(fl)+'" placeholder="вставить ссылку...">'
+  const fileCell='<div class="fl fl-wrap" data-tid="'+t.id+'">'
+    +(fl?(fl.split('\\n').map((u,i)=>u.trim()).filter(Boolean).map((u,i)=>'<div class="fl-link"><a href="'+esc(u)+'" target="_blank" title="'+esc(u)+'">🔗 '+shortUrl(u)+'</a><button class="fl-rm" data-i="'+i+'">✕</button></div>').join('')):'')
+    +'<div class="fl-add"><input class="fl-input" placeholder="https://..."><button class="fl-btn">+ Добавить</button></div>'
     +'</div>';
   return '<tr class="dr'+(t._late?' overdue':'')+'" data-id="'+t.id+'">'
     +'<td><button class="del" title="Удалить">✕</button>'
@@ -672,6 +732,43 @@ function bindPlanRow(tr){
     var idx=periods[pid].tasks.findIndex(function(t){return t.id===id;});
     if(idx>-1){periods[pid].tasks.splice(idx,1);dbDeleteTask(id);renderAll();}
   });
+  // bind multi-link file cell
+  var flWrap=tr.querySelector('.fl-wrap');
+  if(flWrap){
+    function bindFlCell(){
+      var addBtn=flWrap.querySelector('.fl-btn');
+      var addInp=flWrap.querySelector('.fl-input');
+      if(!addBtn) return;
+      function doAdd(){
+        var url=addInp.value.trim(); if(!url) return;
+        var t2=task(); if(!t2) return;
+        var cur=(t2.files||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
+        cur.push(url); t2.files=cur.join('\n');
+        debounceSave(id,pid); addInp.value='';
+        rebuildLinks();
+      }
+      addBtn.addEventListener('click',doAdd);
+      addInp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();doAdd();}});
+      flWrap.querySelectorAll('.fl-rm').forEach(function(btn){
+        btn.addEventListener('click',function(){
+          var t2=task(); if(!t2) return;
+          var cur=(t2.files||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
+          cur.splice(+this.dataset.i,1); t2.files=cur.join('\n');
+          debounceSave(id,pid); rebuildLinks();
+        });
+      });
+    }
+    function rebuildLinks(){
+      var t2=task(); if(!t2) return;
+      var links=(t2.files||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
+      var h=links.map(function(u,i){
+        return '<div class="fl-link"><a href="'+esc(u)+'" target="_blank" title="'+esc(u)+'">🔗 '+shortUrl(u)+'</a><button class="fl-rm" data-i="'+i+'">✕</button></div>';
+      }).join('');
+      h+='<div class="fl-add"><input class="fl-input" placeholder="https://..."><button class="fl-btn">+ Добавить</button></div>';
+      flWrap.innerHTML=h; bindFlCell();
+    }
+    bindFlCell();
+  }
   // click to open detail (not on inputs)
   tr.querySelector('td:first-child').style.cursor='pointer';
   tr.querySelector('td:first-child').addEventListener('click',function(e){
@@ -709,9 +806,9 @@ function repRows(){
 function repRowHTML(t){
   const sc=sCls(t.st);
   const fl=t.files||'';
-  const fileCell='<div class="fl">'
-    +(fl?'<a href="'+esc(fl)+'" target="_blank" title="'+esc(fl)+'">🔗 '+shortUrl(fl)+'</a>':'')
-    +'<input class="fi" data-f="files" value="'+esc(fl)+'" placeholder="вставить ссылку...">'
+  const fileCell='<div class="fl fl-wrap" data-tid="'+t.id+'">'
+    +(fl?(fl.split('\\n').map((u,i)=>u.trim()).filter(Boolean).map((u,i)=>'<div class="fl-link"><a href="'+esc(u)+'" target="_blank" title="'+esc(u)+'">🔗 '+shortUrl(u)+'</a><button class="fl-rm" data-i="'+i+'">✕</button></div>').join('')):'')
+    +'<div class="fl-add"><input class="fl-input" placeholder="https://..."><button class="fl-btn">+ Добавить</button></div>'
     +'</div>';
   return '<tr class="dr'+(t._late?' overdue':'')+'" data-id="'+t.id+'">'
     +'<td style="font-weight:600;font-size:12px">'+esc(t.name)+'<br><span style="font-size:10px;color:#9F9B9D;font-weight:400">'+esc(t.dir)+'</span></td>'
@@ -734,6 +831,43 @@ function bindRepRow(tr){
   tr.querySelectorAll('input.fi').forEach(function(el){
     el.addEventListener('input',function(){var t=task();if(t)t[this.dataset.f]=this.value;debounceSave(id,pid);});
   });
+  // bind multi-link file cell in report
+  var flWrapR=tr.querySelector('.fl-wrap');
+  if(flWrapR){
+    function bindFlCellR(){
+      var addBtnR=flWrapR.querySelector('.fl-btn');
+      var addInpR=flWrapR.querySelector('.fl-input');
+      if(!addBtnR) return;
+      function doAddR(){
+        var url=addInpR.value.trim(); if(!url) return;
+        var t2=task(); if(!t2) return;
+        var cur=(t2.files||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
+        cur.push(url); t2.files=cur.join('\n');
+        debounceSave(id,pid); addInpR.value='';
+        rebuildLinksR();
+      }
+      addBtnR.addEventListener('click',doAddR);
+      addInpR.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();doAddR();}});
+      flWrapR.querySelectorAll('.fl-rm').forEach(function(btn){
+        btn.addEventListener('click',function(){
+          var t2=task(); if(!t2) return;
+          var cur=(t2.files||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
+          cur.splice(+this.dataset.i,1); t2.files=cur.join('\n');
+          debounceSave(id,pid); rebuildLinksR();
+        });
+      });
+    }
+    function rebuildLinksR(){
+      var t2=task(); if(!t2) return;
+      var links=(t2.files||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
+      var h=links.map(function(u,i){
+        return '<div class="fl-link"><a href="'+esc(u)+'" target="_blank" title="'+esc(u)+'">🔗 '+shortUrl(u)+'</a><button class="fl-rm" data-i="'+i+'">✕</button></div>';
+      }).join('');
+      h+='<div class="fl-add"><input class="fl-input" placeholder="https://..."><button class="fl-btn">+ Добавить</button></div>';
+      flWrapR.innerHTML=h; bindFlCellR();
+    }
+    bindFlCellR();
+  }
   tr.querySelectorAll('select.sst').forEach(function(sel){
     ST.forEach(function(s){sel.classList.remove(s.c);}); sel.classList.add(sCls(sel.value));
     sel.addEventListener('change',function(){
