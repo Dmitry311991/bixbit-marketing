@@ -188,7 +188,11 @@ tr.dr:last-child td{border-bottom:none}
 .s-des{background:var(--gray50);color:var(--gray600);border-color:var(--gray100)}
 .s-no{background:#fef0f0;color:#9b1c1c;border-color:#fbb}
 .s-moved{background:#f3e8ff;color:#6b21a8;border-color:#d8b4fe}
-.fl a{color:var(--blue);text-decoration:none;font-size:11px;word-break:break-all}
+.fl{display:flex;flex-direction:column;gap:3px}
+.fl a{display:inline-flex;align-items:center;gap:4px;color:var(--blue);text-decoration:none;font-size:11px;font-weight:500;padding:2px 6px;border-radius:4px;background:#EEF3FF;border:1px solid #b3c8ff;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.fl a:hover{background:#dce8ff;text-decoration:none}
+body.dark .fl a{background:var(--dk-hover);border-color:var(--dk-border);color:var(--dk-accent)}
+body.dark .fl a:hover{background:#1e3d6e}
 .fl a:hover{text-decoration:underline}
 .fi{font-size:10px;padding:3px 5px;border:1px solid transparent;border-radius:4px;color:var(--gray600);background:transparent;width:100%;outline:none;font-family:inherit}
 .fi:hover{border-color:var(--gray100);background:#fff}
@@ -537,6 +541,14 @@ let pid='q1', planDir='all', planQ='', repDir='all', repQ='';
 // ── HELPERS ───────────────────────────────────────────────────────────────
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function autoH(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
+function shortUrl(url){
+  try{
+    const u=new URL(url);
+    const host=u.hostname.replace('www.','');
+    const path=u.pathname.length>1?u.pathname.slice(1,20)+(u.pathname.length>20?'…':''):'';
+    return path?host+'/'+path:host;
+  }catch(e){return url.length>30?url.slice(0,28)+'…':url;}
+}
 function parseDeadline(s){
   if(!s) return null;
   let m=s.match(/(\d{2})\.(\d{2})\.(\d{4})/); if(m) return new Date(+m[3],+m[2]-1,+m[1]);
@@ -615,9 +627,10 @@ function planRowHTML(t){
   const fl=t.files||'';
   const dirs=[...new Set(periods[pid].tasks.map(x=>x.dir))];
   const dirOpts=dirs.map(d=>'<option value="'+esc(d)+'"'+(d===t.dir?' selected':'')+'>'+esc(d)+'</option>').join('');
-  const fileCell=fl
-    ?'<div class="fl"><a href="'+esc(fl)+'" target="_blank">Файл ↗</a></div><input class="fi" data-f="files" value="'+esc(fl)+'" placeholder="ссылка...">'
-    :'<input class="fi" data-f="files" value="" placeholder="вставить ссылку...">';
+  const fileCell='<div class="fl">'
+    +(fl?'<a href="'+esc(fl)+'" target="_blank" title="'+esc(fl)+'">🔗 '+shortUrl(fl)+'</a>':'')
+    +'<input class="fi" data-f="files" value="'+esc(fl)+'" placeholder="вставить ссылку...">'
+    +'</div>';
   return '<tr class="dr'+(t._late?' overdue':'')+'" data-id="'+t.id+'">'
     +'<td><button class="del" title="Удалить">✕</button>'
     +'<textarea class="ce-name" data-f="name" rows="1" placeholder="Новая задача...">'+esc(t.name)+'</textarea>'
@@ -696,7 +709,10 @@ function repRows(){
 function repRowHTML(t){
   const sc=sCls(t.st);
   const fl=t.files||'';
-  const fileCell=fl?'<div class="fl"><a href="'+esc(fl)+'" target="_blank">Файл ↗</a></div><input class="fi" data-f="files" value="'+esc(fl)+'" placeholder="ссылка...">':'<input class="fi" data-f="files" value="" placeholder="ссылка...">';
+  const fileCell='<div class="fl">'
+    +(fl?'<a href="'+esc(fl)+'" target="_blank" title="'+esc(fl)+'">🔗 '+shortUrl(fl)+'</a>':'')
+    +'<input class="fi" data-f="files" value="'+esc(fl)+'" placeholder="вставить ссылку...">'
+    +'</div>';
   return '<tr class="dr'+(t._late?' overdue':'')+'" data-id="'+t.id+'">'
     +'<td style="font-weight:600;font-size:12px">'+esc(t.name)+'<br><span style="font-size:10px;color:#9F9B9D;font-weight:400">'+esc(t.dir)+'</span></td>'
     +'<td style="font-size:11px;color:#4A4A4A">'+esc(t.res_plan)+'</td>'
