@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BiXBiT — Plan & Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#0040DD;--mag:#D9017A;--gray50:#F4F4F4;--gray100:#E6E6E6;
+  --gray400:#9F9B9D;--gray600:#4A4A4A;
+}
+/* ── LIGHT ── */
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F4F4F4;min-height:100vh;color:#000}
+/* ── DARK THEME ── Мягкие контрасты, приятные глазу ── */
+:root{
+  --dk-bg:        #1C1C1E;   /* основной фон — тёплый тёмный */
+  --dk-surface:   #2C2C2E;   /* карточки, таблица */
+  --dk-surface2:  #3A3A3C;   /* строки чётные, hover-области */
+  --dk-border:    #48484A;   /* границы */
+  --dk-border2:   #3A3A3C;   /* тонкие разделители */
+  --dk-text:      #F2F2F7;   /* основной текст */
+  --dk-text2:     #AEAEB2;   /* вторичный текст */
+  --dk-text3:     #636366;   /* плейсхолдеры, отключено */
+  --dk-accent:    #4A90E2;   /* синий акцент в тёмном */
+  --dk-mag:       #E8508A;   /* маджента в тёмном */
+  --dk-hover:     #1C3A5E;   /* hover строк */
+  --dk-input-bg:  #2C2C2E;   /* фон инпутов */
+  --dk-input-hl:  #1C3A5E;   /* фокус инпутов */
+}
+body.dark{background:var(--dk-bg);color:var(--dk-text)}
+body.dark .body{background:var(--dk-bg)}
+/* Period buttons */
+body.dark .per-btn{background:var(--dk-surface);border-color:var(--dk-border);color:var(--dk-text2);transition:all .15s}
+body.dark .per-btn:hover{border-color:var(--dk-accent);color:var(--dk-text)}
+body.dark .per-btn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+body.dark .period-name{color:var(--dk-text)}
+body.dark .new-per-btn{border-color:var(--dk-border);color:var(--dk-text3)}
+body.dark .new-per-btn:hover{border-color:var(--dk-mag);color:var(--dk-mag)}
+/* Search & buttons */
+body.dark .srch{background:var(--dk-surface);border-color:var(--dk-border);color:var(--dk-text)}
+body.dark .srch:focus{border-color:var(--dk-accent);box-shadow:0 0 0 3px rgba(74,144,226,.15)}
+body.dark .srch::placeholder{color:var(--dk-text3)}
+body.dark .export-btn{background:var(--dk-surface);color:var(--dk-text2);border-color:var(--dk-border)}
+body.dark .export-btn:hover{background:var(--dk-surface2);border-color:var(--dk-text3);color:var(--dk-text)}
+/* Dir filter buttons */
+body.dark .dbtn{background:var(--dk-surface);border-color:var(--dk-border);color:var(--dk-text2)}
+body.dark .dbtn:hover{border-color:var(--dk-accent);color:var(--dk-text);background:var(--dk-hover)}
+body.dark .dbtn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+body.dark .task-cnt{color:var(--dk-text3)}
+/* Table */
+body.dark table{background:var(--dk-surface);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+body.dark th{background:#252527;color:var(--dk-text3);border-bottom:1.5px solid var(--dk-border)}
+body.dark .sec-row td{background:#252527;color:var(--dk-text2);border-top:2px solid var(--dk-mag);border-bottom:1px solid var(--dk-border2);letter-spacing:.08em}
+body.dark tr.dr:nth-child(odd) td{background:var(--dk-surface)}
+body.dark tr.dr:nth-child(even) td{background:#262628}
+body.dark tr.dr:hover td{background:var(--dk-hover)!important}
+body.dark tr.dr td{border-bottom-color:var(--dk-border2)}
+/* Editable cells */
+body.dark .ce{color:var(--dk-text);background:transparent;border-color:transparent}
+body.dark .ce:hover{border-color:var(--dk-border);background:var(--dk-input-bg)}
+body.dark .ce:focus{background:var(--dk-input-hl);border-color:var(--dk-accent);box-shadow:0 0 0 2px rgba(74,144,226,.15)}
+body.dark .ce::placeholder{color:var(--dk-text3)}
+body.dark .ce-name{color:var(--dk-text);background:transparent;border-color:transparent}
+body.dark .ce-name:hover{border-color:var(--dk-border);background:var(--dk-input-bg)}
+body.dark .ce-name:focus{background:var(--dk-input-hl);border-color:var(--dk-accent)}
+body.dark .ce-name::placeholder{color:var(--dk-mag);font-style:italic}
+body.dark .fi{color:var(--dk-text2);background:transparent;border-color:transparent}
+body.dark .fi:hover{border-color:var(--dk-border);background:var(--dk-input-bg)}
+body.dark .fi:focus{background:var(--dk-input-hl);border-color:var(--dk-accent)}
+body.dark .fi::placeholder{color:var(--dk-text3)}
+/* Select elements */
+body.dark select.dir-sel{background:var(--dk-input-bg);border-color:var(--dk-border);color:var(--dk-text2)}
+body.dark .sst.s-des{background:#3A3A3C;color:var(--dk-text2);border-color:var(--dk-border)}
+body.dark .sst.s-done{background:#0D3326;color:#4CD97B;border-color:#1A5C3A}
+body.dark .sst.s-prog{background:#0D2645;color:#5BA8F5;border-color:#1A4A8A}
+body.dark .sst.s-wait{background:#3D2A00;color:#FFB340;border-color:#6B4800}
+body.dark .sst.s-moved{background:#2D1A4D;color:#BF8AFF;border-color:#5A3599}
+body.dark .sst.s-no{background:#3D0D0D;color:#FF6B6B;border-color:#6B1515}
+body.dark .fl a{color:var(--dk-accent)}
+/* Report cards */
+body.dark .rep-card{background:var(--dk-surface);border-color:var(--dk-border)}
+body.dark .rep-card-title{color:var(--dk-text2)}
+body.dark .rep-card-title::after{background:var(--dk-border)}
+body.dark .prog-lbl{color:var(--dk-text2)}
+body.dark .prog-bg{background:var(--dk-surface2)}
+body.dark .rep-tbl-note{color:var(--dk-text3)}
+body.dark .stat-dots .sdot{opacity:.9}
+/* Modals */
+body.dark .modal{background:var(--dk-surface);box-shadow:0 8px 40px rgba(0,0,0,.5)}
+body.dark .modal h3{color:var(--dk-text)}
+body.dark .modal label{color:var(--dk-text2)}
+body.dark .modal input,body.dark .modal select{background:var(--dk-input-bg);border-color:var(--dk-border);color:var(--dk-text)}
+body.dark .modal input:focus,body.dark .modal select:focus{border-color:var(--dk-accent)}
+body.dark .mbtn-cancel{background:transparent;border-color:var(--dk-border);color:var(--dk-text2)}
+body.dark .mbtn-cancel:hover{border-color:var(--dk-text3);color:var(--dk-text)}
+/* Detail panel */
+body.dark .detail-panel{background:var(--dk-surface)}
+body.dark .dp-hdr{border-bottom-color:var(--dk-border)}
+body.dark .dp-name{color:var(--dk-text)}
+body.dark .dp-lbl{color:var(--dk-text3)}
+body.dark .dp-val{color:var(--dk-text2)}
+body.dark .dp-hr{background:var(--dk-border2)}
+body.dark .dp-close:hover{color:var(--dk-text);background:var(--dk-surface2)}
+/* AI modal */
+body.dark .ai-modal{background:var(--dk-surface);box-shadow:0 16px 60px rgba(0,0,0,.5)}
+body.dark .ai-hdr{border-bottom-color:var(--dk-border)}
+body.dark .ai-title{color:var(--dk-text)}
+body.dark .ai-body{color:var(--dk-text2);background:var(--dk-surface)}
+body.dark .ai-ftr{border-top-color:var(--dk-border)}
+/* Overdue */
+tr.dr.overdue td{background:#fff5f5!important}
+body.dark tr.dr.overdue td{background:#2D1010!important}
+body.dark tr.dr.overdue:hover td{background:#3D1515!important}
+/* HEADER */
+.hdr{background:var(--mag);position:relative;overflow:hidden}
+.hdr-hex{position:absolute;right:-24px;top:-36px;opacity:.1;pointer-events:none}
+.hdr-inner{padding:20px 28px 0;position:relative}
+.hdr-top{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.hdr-meta{margin-left:auto;text-align:right}
+.hdr-meta .per{font-family:'Fira Code',monospace;font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.04em}
+.hdr-meta .dtitle{font-size:11px;color:rgba(255,255,255,.8);margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.09em}
+.theme-btn{background:none;border:1.5px solid rgba(255,255,255,.3);border-radius:20px;color:rgba(255,255,255,.8);font-size:11px;padding:5px 12px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.theme-btn:hover{border-color:rgba(255,255,255,.7);color:#fff}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;padding:0 28px 20px}
+.kpi{background:rgba(0,0,0,.18);border-radius:6px;padding:10px 12px}
+.kpi-lbl{font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.kpi-val{font-family:'Fira Code',monospace;font-size:20px;font-weight:500;color:#fff;line-height:1}
+.kpi-sub{font-size:10px;color:rgba(255,255,255,.45);margin-top:3px}
+.kpi-up{color:#ffd0eb}
+.kpi-red{color:#ff9999!important}
+.kpi-overdue-block{background:rgba(180,0,0,.25)!important;border:1px solid rgba(255,80,80,.4);display:none}
+.main-tabs{display:flex;padding:0 28px;background:rgba(0,0,0,.12);gap:2px}
+.main-tab{font-size:12px;font-weight:600;padding:10px 20px;border:none;background:transparent;color:rgba(255,255,255,.6);cursor:pointer;border-bottom:3px solid transparent;letter-spacing:.04em;text-transform:uppercase;font-family:inherit}
+.main-tab.on{color:#fff;border-bottom-color:#fff}
+.main-tab:hover:not(.on){color:rgba(255,255,255,.85)}
+/* BODY */
+.body{padding:24px 28px}
+.panel{display:none}.panel.on{display:block}
+.period-bar{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.per-btn{font-size:12px;font-weight:600;padding:7px 18px;border-radius:20px;border:1.5px solid var(--gray100);background:#fff;color:var(--gray600);cursor:pointer;font-family:inherit;transition:all .12s}
+.per-btn:hover{border-color:var(--blue);color:var(--blue)}
+.per-btn.on{border-color:var(--blue);background:var(--blue);color:#fff}
+.new-per-btn{font-size:12px;font-weight:600;padding:7px 14px;border-radius:20px;border:1.5px dashed var(--gray400);background:transparent;color:var(--gray400);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px}
+.new-per-btn:hover{border-color:var(--mag);color:var(--mag)}
+.period-name{font-size:13px;font-weight:700;color:#000;margin-left:auto}
+.filter-bar{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.search-row{display:flex;gap:8px;flex-wrap:wrap}
+.srch{flex:1;min-width:160px;font-size:12px;padding:7px 12px;border:1.5px solid var(--gray100);border-radius:8px;outline:none;background:#fff;color:#000;font-family:inherit}
+.srch:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,64,221,.07)}
+.srch::placeholder{color:#C0BDC0}
+.add-btn{font-size:12px;font-weight:600;padding:7px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.add-btn:hover{background:#0035bb}
+.export-btn{font-size:12px;font-weight:600;padding:7px 14px;background:#fff;color:var(--gray600);border:1.5px solid var(--gray100);border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.export-btn:hover{border-color:var(--gray400)}
+.ai-btn{font-size:12px;font-weight:600;padding:7px 14px;background:linear-gradient(135deg,var(--blue),var(--mag));color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.ai-btn:hover{opacity:.88}.ai-btn:disabled{opacity:.45;cursor:not-allowed}
+.dir-btns{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.dbtn{font-size:11px;font-weight:500;padding:5px 12px;border-radius:16px;border:1.5px solid var(--gray100);background:#fff;color:var(--gray600);cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .12s}
+.dbtn:hover{border-color:var(--blue);color:var(--blue);background:#EEF3FF}
+.dbtn.on{border-color:var(--blue);background:var(--blue);color:#fff}
+.task-cnt{font-size:12px;color:var(--gray400);margin-left:auto}
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11.5px;table-layout:fixed;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+col.cn{width:15%}col.cd{width:17%}col.cr{width:15%}col.cs{width:11%}col.ca{width:9%}col.cb{width:8%}col.cf{width:10%}col.cc{width:9%}col.cx{width:6%}
+th{text-align:left;padding:9px 10px;font-size:10px;font-weight:700;color:var(--gray400);border-bottom:2px solid var(--gray100);background:#FAFAFA;white-space:nowrap;letter-spacing:.05em;text-transform:uppercase}
+.sec-row td{background:#F0F0F2;border-top:2px solid var(--mag);border-bottom:1px solid var(--gray100);font-size:10px;font-weight:700;color:var(--gray600);letter-spacing:.1em;text-transform:uppercase;padding:7px 10px}
+tr.dr{transition:background .1s}
+tr.dr:nth-child(even) td{background:#FAFAFA}
+tr.dr:nth-child(odd) td{background:#fff}
+tr.dr:hover td{background:#EEF3FF!important}
+tr.dr td{border-bottom:1px solid #F0F0F2;vertical-align:top;padding:6px 8px}
+tr.dr:last-child td{border-bottom:none}
+.ce{font-size:11px;color:#000;background:transparent;border:1px solid transparent;outline:none;width:100%;padding:3px 5px;border-radius:4px;font-family:inherit;resize:none;overflow:hidden;min-height:22px;line-height:1.5}
+.ce:hover{border-color:var(--gray100);background:#fff}
+.ce:focus{background:#EEF3FF;border-color:#b3c8ff;box-shadow:0 0 0 2px rgba(0,64,221,.06)}
+.ce::placeholder{color:#D0CDD0}
+.ce-name{font-size:12px;font-weight:600;color:#000;background:transparent;border:1px solid transparent;outline:none;width:100%;padding:3px 5px;border-radius:4px;font-family:inherit;line-height:1.5}
+.ce-name:hover{border-color:var(--gray100);background:#fff}
+.ce-name:focus{background:#EEF3FF;border-color:#b3c8ff}
+.ce-name::placeholder{color:var(--mag);font-style:italic;font-weight:400}
+.sst{font-size:10px;font-weight:500;padding:4px 6px;border-radius:5px;border:1px solid transparent;cursor:pointer;outline:none;font-family:inherit;width:100%}
+.s-done{background:#e6f7f0;color:#0a6640;border-color:#b3e8d1}
+.s-prog{background:#e6eeff;color:var(--blue);border-color:#b3c8ff}
+.s-wait{background:#fff8e6;color:#8a5700;border-color:#ffd980}
+.s-des{background:var(--gray50);color:var(--gray600);border-color:var(--gray100)}
+.s-no{background:#fef0f0;color:#9b1c1c;border-color:#fbb}
+.s-moved{background:#f3e8ff;color:#6b21a8;border-color:#d8b4fe}
+.fl a{color:var(--blue);text-decoration:none;font-size:11px;word-break:break-all}
+.fl a:hover{text-decoration:underline}
+.fi{font-size:10px;padding:3px 5px;border:1px solid transparent;border-radius:4px;color:var(--gray600);background:transparent;width:100%;outline:none;font-family:inherit}
+.fi:hover{border-color:var(--gray100);background:#fff}
+.fi:focus{background:#EEF3FF;border-color:#b3c8ff}
+.fi::placeholder{color:#D0CDD0}
+.del{background:none;border:none;cursor:pointer;color:#C0BDC0;font-size:13px;padding:2px 4px;border-radius:3px;line-height:1;float:right}
+.del:hover{color:var(--mag);background:#fce8f3}
+/* REPORT */
+.rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.rep-card{background:#fff;border:1.5px solid var(--gray100);border-radius:10px;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.rep-card-title{font-size:11px;font-weight:700;color:var(--gray400);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.rep-card-title::after{content:'';flex:1;height:1px;background:var(--gray100)}
+.prog-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.prog-lbl{font-size:11px;color:var(--gray600);width:130px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prog-bg{flex:1;height:6px;background:var(--gray100);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .4s}
+.prog-pct{font-family:'Fira Code',monospace;font-size:10px;font-weight:500;width:32px;text-align:right}
+.stat-dots{display:flex;flex-wrap:wrap;gap:6px}
+.sdot{font-size:11px;font-weight:500;padding:4px 12px;border-radius:6px;display:flex;align-items:center;gap:5px}
+.sdot-num{font-family:'Fira Code',monospace;font-size:14px;font-weight:600}
+.rep-tbl-note{font-size:11px;color:var(--gray400);margin-bottom:8px;font-style:italic}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:28px 32px;width:420px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.18)}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:16px;color:#000}
+.modal label{font-size:12px;font-weight:600;color:var(--gray600);display:block;margin-bottom:4px;margin-top:12px}
+.modal input,.modal select{width:100%;font-size:13px;padding:8px 10px;border:1.5px solid var(--gray100);border-radius:6px;outline:none;font-family:inherit;background:#fff;color:#000}
+.modal input:focus,.modal select:focus{border-color:var(--blue)}
+.modal-btns{display:flex;gap:8px;margin-top:20px;justify-content:flex-end}
+.mbtn-ok{font-size:13px;font-weight:600;padding:8px 20px;background:var(--blue);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit}
+.mbtn-cancel{font-size:13px;padding:8px 16px;background:transparent;color:var(--gray600);border:1.5px solid var(--gray100);border-radius:6px;cursor:pointer;font-family:inherit}
+/* DETAIL PANEL */
+.detail-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200}
+.detail-overlay.open{display:block}
+.detail-panel{position:fixed;right:-460px;top:0;bottom:0;width:440px;background:#fff;box-shadow:-4px 0 32px rgba(0,0,0,.15);z-index:201;display:flex;flex-direction:column;overflow:hidden;transition:right .25s ease}
+.detail-panel.open{right:0}
+body.dark .detail-panel{background:#1a1a1a}
+.dp-hdr{padding:18px 20px 14px;border-bottom:1px solid #E6E6E6;flex-shrink:0}
+body.dark .dp-hdr{border-bottom-color:#2a2a2a}
+.dp-hdr-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}
+.dp-close{background:none;border:none;font-size:18px;cursor:pointer;color:#9F9B9D;line-height:1;margin-left:auto;padding:2px;border-radius:4px;flex-shrink:0}
+.dp-close:hover{color:#000;background:#F4F4F4}
+body.dark .dp-close:hover{color:#fff;background:#2a2a2a}
+.dp-name{font-size:14px;font-weight:700;color:#000;line-height:1.4;flex:1}
+body.dark .dp-name{color:#E6E6E6}
+.dp-dir{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:#E6E6E6;color:#4A4A4A;text-transform:uppercase;letter-spacing:.05em}
+.dp-body{flex:1;overflow-y:auto;padding:18px 20px}
+.dp-field{margin-bottom:14px}
+.dp-lbl{font-size:10px;font-weight:700;color:#9F9B9D;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+body.dark .dp-lbl{color:#4A4A4A}
+.dp-val{font-size:12px;color:#000;line-height:1.6}
+body.dark .dp-val{color:#E6E6E6}
+.dp-hr{height:1px;background:#E6E6E6;margin:14px 0}
+body.dark .dp-hr{background:#2a2a2a}
+/* AI MODAL */
+.ai-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center}
+.ai-bg.open{display:flex}
+.ai-modal{background:#fff;border-radius:14px;width:600px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 16px 60px rgba(0,0,0,.25);overflow:hidden}
+body.dark .ai-modal{background:#1a1a1a;color:#E6E6E6}
+.ai-hdr{padding:18px 22px 14px;border-bottom:1px solid #E6E6E6;display:flex;align-items:center;gap:8px;flex-shrink:0}
+body.dark .ai-hdr{border-bottom-color:#2a2a2a}
+.ai-title{font-size:15px;font-weight:700;flex:1;color:#000}
+body.dark .ai-title{color:#E6E6E6}
+.ai-body{flex:1;overflow-y:auto;padding:18px 22px;font-size:13px;line-height:1.75;white-space:pre-wrap;color:#000}
+body.dark .ai-body{color:#E6E6E6}
+.ai-ftr{padding:14px 22px;border-top:1px solid #E6E6E6;display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+body.dark .ai-ftr{border-top-color:#2a2a2a}
+.ai-copy{font-size:12px;padding:7px 16px;background:var(--blue);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600}
+.ai-spinner{display:inline-block;width:16px;height:16px;border:2px solid #E6E6E6;border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<!-- HEADER -->
+<div class="hdr">
+  <svg class="hdr-hex" width="300" height="280" viewBox="0 0 358 420" fill="none"><path d="M284.718 344.295L179.393 405.086L132.8 378.405V256.584L284.718 344.295ZM115.297 368.362L9.625 307.851V254.212L115.297 193.201V368.362ZM348.924 307.294L302.37 334.163L196.855 273.243L348.924 185.446V307.294ZM225.603 183.093V236.402L179.206 263.189L132.8 236.396V183.14L179.241 156.326L225.603 183.093ZM161.738 146.238L9.625 234.062V112.395L56.3242 85.3769L161.738 146.238ZM348.748 111.831V165.295L243.076 226.305V50.7822L348.748 111.831ZM225.638 40.6318V162.851L73.8438 75.2119L179.594 14.0322L225.638 40.6318Z" fill="white"/></svg>
+  <div class="hdr-inner">
+    <div class="hdr-top">
+      <svg width="155" height="46" viewBox="0 0 1400 420" fill="none">
+        <path d="M284.718 344.295L179.393 405.086L132.8 378.405V256.584L284.718 344.295ZM115.297 368.362L9.625 307.851V254.212L115.297 193.201V368.362ZM348.924 307.294L302.37 334.163L196.855 273.243L348.924 185.446V307.294ZM225.603 183.093V236.402L179.206 263.189L132.8 236.396V183.14L179.241 156.326L225.603 183.093ZM161.738 146.238L9.625 234.062V112.395L56.3242 85.3769L161.738 146.238ZM348.748 111.831V165.295L243.076 226.305V50.7822L348.748 111.831ZM225.638 40.6318V162.851L73.8438 75.2119L179.594 14.0322L225.638 40.6318Z" fill="white" stroke="white" stroke-width="5"/>
+        <path d="M430.463 308.789V111.59H534.011C558.614 111.59 576.98 117.5 589.112 129.333C597.761 137.793 602.086 148.584 602.086 161.719C602.086 182.191 591.706 196.834 570.948 205.665C584.018 209.792 593.97 215.702 600.805 223.407C607.64 231.113 611.053 241.438 611.046 254.382C611.046 271.302 604.315 284.574 590.853 294.241C577.392 303.894 558.64 308.748 534.599 308.789H430.463ZM484.976 264.857H528.245C546.12 264.857 555.061 258.66 555.069 246.264C555.069 234.431 545.932 228.522 527.657 228.522H484.987L484.976 264.857ZM484.976 190.212H520.172C537.854 190.212 546.697 184.302 546.697 172.469C546.697 161.212 538.24 155.577 521.325 155.577H484.976V190.212ZM634.686 308.789V156.427H689.489V308.789H634.686ZM633.533 142.619V111.631H690.642V142.619H633.533ZM708.493 308.789L777.686 208.531L711.353 111.659H775.738L811.488 167.149L847.537 111.659H910.434L844.089 207.982L913.282 308.816H849.001L810.346 249.391L771.401 308.816L708.493 308.789ZM934.34 308.789V111.59H1037.89C1062.49 111.59 1080.85 117.5 1092.98 129.333C1101.63 137.793 1105.96 148.584 1105.96 161.719C1105.96 182.191 1095.58 196.834 1074.83 205.665C1087.9 209.792 1097.85 215.702 1104.68 223.407C1111.52 231.113 1114.93 241.438 1114.92 254.382C1114.92 271.302 1108.2 284.574 1094.74 294.241C1081.29 303.894 1062.54 308.734 1038.49 308.748L934.34 308.789ZM988.864 264.857H1032.13C1050.02 264.857 1058.96 258.66 1058.96 246.264C1058.96 234.431 1049.82 228.522 1031.56 228.522H988.888L988.864 264.857ZM988.864 190.212H1024.05C1041.73 190.212 1050.57 184.302 1050.57 172.469C1050.57 161.212 1042.12 155.577 1025.2 155.577H988.899L988.864 190.212ZM1138.54 308.789V156.427H1193.35V308.789H1138.54ZM1137.39 142.619V111.631H1194.5V142.619H1137.39ZM1276.47 308.789V159.512H1215.9V111.631H1393V159.512H1332.43V308.789H1276.47Z" fill="white"/>
+      </svg>
+      <div class="hdr-meta">
+        <div class="per" id="hdrPeriod" style="font-family:'Fira Code',monospace;font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.04em">Q1_2026 · JAN–MAR</div>
+        <div class="dtitle">Digital Marketing · Plan & Report</div>
+      </div>
+      <button class="theme-btn" id="themeBtn">🌙 Тёмная</button>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-lbl">Всего задач</div><div class="kpi-val" id="kTotal" style="font-family:'Fira Code',monospace">—</div><div class="kpi-sub">в периоде</div></div>
+      <div class="kpi"><div class="kpi-lbl">Выполнено</div><div class="kpi-val" id="kDone" style="font-family:'Fira Code',monospace">—</div><div class="kpi-sub kpi-up" id="kDonePct">—</div></div>
+      <div class="kpi"><div class="kpi-lbl">В работе</div><div class="kpi-val" id="kProg" style="font-family:'Fira Code',monospace">—</div><div class="kpi-sub" id="kWait">ожидание: —</div></div>
+      <div class="kpi" id="kMovedKpi"><div class="kpi-lbl">Перенесено</div><div class="kpi-val" id="kMoved" style="font-family:'Fira Code',monospace">—</div><div class="kpi-sub">на след. период</div></div>
+      <div class="kpi kpi-overdue-block" id="kOverdueKpi"><div class="kpi-lbl">🔴 Просрочено</div><div class="kpi-val kpi-red" id="kOverdue" style="font-family:'Fira Code',monospace">0</div><div class="kpi-sub kpi-red">дедлайн прошёл</div></div>
+    </div>
+  </div>
+  <div class="main-tabs">
+    <button class="main-tab on" data-tab="plan">📋 План</button>
+    <button class="main-tab" data-tab="report">📊 Отчёт</button>
+  </div>
+</div>
+
+<div class="body">
+
+<!-- PLAN -->
+<div class="panel on" id="panel-plan">
+  <div class="period-bar">
+    <div id="perBtns"></div>
+    <button class="new-per-btn" id="newPerBtn">＋ Новый период</button>
+    <span class="period-name" id="planPeriodName"></span>
+  </div>
+  <div class="filter-bar">
+    <div class="search-row">
+      <input class="srch" id="planSearch" placeholder="Поиск по задачам...">
+      <button class="add-btn" id="addBtn">＋ Новая задача</button>
+      <button class="export-btn" id="exportPlan">↓ CSV план</button>
+      <button class="ai-btn" id="aiBtn">✦ AI Отчёт</button>
+    </div>
+    <div class="dir-btns" id="planDirBtns"></div>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <colgroup><col class="cn"><col class="cd"><col class="cr"><col class="cs"><col class="ca"><col class="cb"><col class="cf"><col class="cc"><col class="cx"></colgroup>
+      <thead><tr><th>Задача</th><th>Описание</th><th>Плановый результат</th><th>Статус</th><th>Согласование</th><th>Бюджет</th><th>Файлы</th><th>Комментарии</th><th></th></tr></thead>
+      <tbody id="planBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- REPORT -->
+<div class="panel" id="panel-report">
+  <div class="period-bar">
+    <div id="repPerBtns"></div>
+    <span class="period-name" id="repPeriodName"></span>
+  </div>
+  <div id="repStats" class="rep-grid"></div>
+  <div class="filter-bar">
+    <div class="search-row">
+      <input class="srch" id="repSearch" placeholder="Поиск по отчёту...">
+      <button class="export-btn" id="exportRep">↓ CSV отчёт</button>
+    </div>
+    <div class="dir-btns" id="repDirBtns"></div>
+  </div>
+  <p class="rep-tbl-note">Статус, описание и плановый результат синхронизируются из плана. Фактический результат, файлы и комментарии — только здесь.</p>
+  <div class="tbl-wrap">
+    <table>
+      <colgroup><col class="cn"><col style="width:13%"><col style="width:14%"><col style="width:14%"><col style="width:10%"><col style="width:11%"><col style="width:12%"></colgroup>
+      <thead><tr><th>Задача</th><th>Плановый результат</th><th>Фактический результат</th><th>Комментарии / Сложности</th><th>Статус</th><th>Файлы</th><th>Согласование</th></tr></thead>
+      <tbody id="repBody"></tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /body -->
+
+<!-- NEW PERIOD MODAL -->
+<div class="modal-bg" id="newPerModal">
+  <div class="modal">
+    <h3>Новый отчётный период</h3>
+    <label>Название периода</label>
+    <input id="mName" placeholder="Q3 2026 · Июль – Сентябрь">
+    <label>Код для шапки</label>
+    <input id="mCode" placeholder="Q3_2026 · JUL–SEP">
+    <label>Задачи</label>
+    <select id="mBase">
+      <option value="empty">Пустой период</option>
+      <option value="copy">Скопировать незавершённые из текущего</option>
+    </select>
+    <div class="modal-btns">
+      <button class="mbtn-cancel" id="mCancel">Отмена</button>
+      <button class="mbtn-ok" id="mOk">Создать</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-overlay" id="detailOverlay"></div>
+<div class="detail-panel" id="detailPanel">
+  <div class="dp-hdr">
+    <div class="dp-hdr-top">
+      <div class="dp-name" id="dpName"></div>
+      <button class="dp-close" id="dpClose">✕</button>
+    </div>
+    <span class="dp-dir" id="dpDir"></span>
+  </div>
+  <div class="dp-body">
+    <div class="dp-field"><div class="dp-lbl">Статус</div><div id="dpStWrap"></div></div>
+    <div class="dp-hr"></div>
+    <div class="dp-field"><div class="dp-lbl">Описание</div><div class="dp-val" id="dpDesc"></div></div>
+    <div class="dp-field"><div class="dp-lbl">Плановый результат</div><div class="dp-val" id="dpResPlan"></div></div>
+    <div class="dp-hr"></div>
+    <div class="dp-field"><div class="dp-lbl">Фактический результат</div><div class="dp-val" id="dpResActual" style="color:#9F9B9D;font-style:italic">—</div></div>
+    <div class="dp-hr"></div>
+    <div class="dp-field"><div class="dp-lbl">Согласование</div><div class="dp-val" id="dpAgree"></div></div>
+    <div class="dp-field"><div class="dp-lbl">Бюджет</div><div class="dp-val" id="dpBudget"></div></div>
+    <div class="dp-field"><div class="dp-lbl">Срок</div><div class="dp-val" id="dpDue"></div></div>
+    <div class="dp-field"><div class="dp-lbl">Файлы</div><div class="dp-val" id="dpFiles"></div></div>
+    <div class="dp-field"><div class="dp-lbl">Комментарии</div><div class="dp-val" id="dpComments" style="color:#9F9B9D;font-style:italic">—</div></div>
+  </div>
+</div>
+
+<!-- AI MODAL -->
+<div class="ai-bg" id="aiModal">
+  <div class="ai-modal">
+    <div class="ai-hdr">
+      <div class="ai-title">✦ AI-отчёт — <span id="aiPeriodLbl"></span></div>
+      <button class="dp-close" id="aiClose">✕</button>
+    </div>
+    <div class="ai-body" id="aiBody"><span class="ai-spinner"></span>Анализирую задачи...</div>
+    <div class="ai-ftr">
+      <button class="ai-copy" id="aiCopy">Скопировать</button>
+      <button class="mbtn-cancel" id="aiCloseBtn">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── SUPABASE CONFIG ─────────────────────────────────────────────────────
+const SUPA_URL = 'https://pgafsuwvdfdbloyjdspv.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnYWZzdXd2ZGZkYmxveWpkc3B2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTU5MjMsImV4cCI6MjA5ODA3MTkyM30.NBBF-C5NzmvjTD1AvruMlvEn--plwLgHtphC43GgsIw';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ── LOADING OVERLAY ──────────────────────────────────────────────────────
+function showLoader(msg) {
+  let el = document.getElementById('dbLoader');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'dbLoader';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(16,16,16,.88);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px';
+    el.innerHTML = '<div style="width:44px;height:44px;border:3px solid rgba(217,1,122,.25);border-top-color:#D9017A;border-radius:50%;animation:spin .7s linear infinite"></div><div id="dbLoaderMsg" style="color:#fff;font-size:13px;font-family:Fira Code,monospace;letter-spacing:.05em;color:rgba(255,255,255,.7)">Загрузка...</div>';
+    document.body.appendChild(el);
+  }
+  document.getElementById('dbLoaderMsg').textContent = msg || 'Загрузка...';
+  el.style.display = 'flex';
+}
+function hideLoader() {
+  const el = document.getElementById('dbLoader');
+  if (el) el.style.display = 'none';
+}
+
+// ── DB HELPERS ────────────────────────────────────────────────────────────
+async function dbSavePeriod(p) {
+  const { error } = await supa.from('periods').upsert({ id: p.id, label: p.label, code: p.code });
+  if (error) console.error('savePeriod:', error);
+}
+
+async function dbSaveTask(task, periodId) {
+  const { error } = await supa.from('tasks').upsert({
+    id: task.id, period_id: periodId,
+    dir: task.dir || '', task_name: task.name || '',
+    description: task.desc || '', res_plan: task.res_plan || '',
+    due: task.due || '', agree: task.agree || '', budget: task.budget || '',
+    st: task.st || 'В ожидании', res_actual: task.res_actual || '',
+    files: task.files || '', comments: task.comments || '',
+    sort_order: task.id, updated_at: new Date().toISOString()
+  });
+  if (error) console.error('saveTask:', error);
+}
+
+async function dbDeleteTask(taskId) {
+  await supa.from('tasks').delete().eq('id', taskId);
+}
+
+// Debounce: save to DB 800ms after last edit
+const _saveTimers = {};
+function debounceSave(taskId, periodId) {
+  clearTimeout(_saveTimers[taskId]);
+  _saveTimers[taskId] = setTimeout(() => {
+    const t = periods[periodId]?.tasks.find(x => x.id === taskId);
+    if (t) dbSaveTask(t, periodId);
+  }, 800);
+}
+
+// ── LOAD FROM DB ──────────────────────────────────────────────────────────
+async function initFromDB() {
+  showLoader('Подключение к базе данных...');
+  try {
+    const { data: pRows, error: pe } = await supa.from('periods').select('*').order('created_at');
+    const { data: tRows, error: te } = await supa.from('tasks').select('*').order('sort_order');
+    if (pe || te) throw pe || te;
+
+    if (pRows && pRows.length > 0) {
+      // Wipe in-memory defaults, load from DB
+      Object.keys(periods).forEach(k => delete periods[k]);
+      pRows.forEach(p => { periods[p.id] = { id: p.id, label: p.label, code: p.code, tasks: [] }; });
+      (tRows || []).forEach(t => {
+        const p = periods[t.period_id];
+        if (p) p.tasks.push({ id: t.id, dir: t.dir, name: t.task_name,
+          desc: t.description, res_plan: t.res_plan, due: t.due,
+          agree: t.agree, budget: t.budget, st: t.st,
+          res_actual: t.res_actual, files: t.files, comments: t.comments });
+      });
+      pid = Object.keys(periods)[0];
+      hideLoader();
+      renderAll();
+    } else {
+      // First run — seed DB with Q1+Q2 data
+      await seedDB();
+    }
+  } catch(e) {
+    console.error('DB init error:', e);
+    hideLoader();
+    renderAll(); // fallback to in-memory
+  }
+}
+
+// ── SEED DB (first run) ────────────────────────────────────────────────────
+async function seedDB() {
+  showLoader('Первый запуск — сохраняю данные в Supabase...');
+  for (const p of Object.values(periods)) { await dbSavePeriod(p); }
+  const allTasks = Object.entries(periods).flatMap(([pid2, p]) => p.tasks.map(t => [t, pid2]));
+  for (let i = 0; i < allTasks.length; i++) {
+    const [task, pid2] = allTasks[i];
+    if (i % 20 === 0) showLoader(`Сохраняю задачи... ${i+1}/${allTasks.length}`);
+    await dbSaveTask(task, pid2);
+  }
+  showLoader('Готово! Данные сохранены ✓');
+  setTimeout(() => { hideLoader(); renderAll(); }, 1200);
+}
+</script>
+<script>
+const RAW_Q1=[{"id": 1000, "dir": "Работа с сайтом", "name": "Обновление блога и структуры /blog", "desc": "новая рубрикация, улучшенная структура, внедрение превью и внутренних ссылок.", "res_plan": "Рост конверсии из блога на продуктовые страницы: с 15% - 20-25% Конверсия в лид-форму / регистрация в AMS / скачивание: ", "due": "до 01.04.2026", "agree": "Вера Юркевич Роман Бубен", "budget": "Собственные ресурсы", "st": "Перенесено", "res_actual": "Задача перенесена на Q2 2026 Объемная задача, не хватило ресурса. Исходные данные Показатель                          Q4                        Q1 (фа", "files": "", "comments": "Не выполнено. По причине объемной задачи и ограниченных ресурсов в Q1 Данная задача в Q1 была не в приоритете"}, {"id": 1001, "dir": "Работа с сайтом", "name": "Редизайн страницы «О нас» /about", "desc": "усиление блока экспертизы, командной фотографии, добавление инфографики, на Ru версии удалить с карты Гео польша. Замени", "res_plan": "Конверсия пользователей, которые посещают страницу перед лидом: с 5% - 7-8% Время на странице (time on page): с 1:20 - 2", "due": "до 01.04.2026", "agree": "Вера Юркевич Роман Бубен", "budget": "", "st": "Выполнено", "res_actual": "Выполнено. Макет отдан в тех отдел для релиза  Факт Q1 и выполнение плана 1. Визиты (рост) Q4: 276 визитов  Q1: 31 визит  Фактическое изменение: –89% ", "files": "https://www.figma.com/design/Qfd4pEV2tQJkqLEfnJIEIu/Moodboards?node-id=496-6228&p=f&t=toRgmoVp4Q4gAaxh-0", "comments": "Данная задача в разработке отдела дизайна.  Задача требует тщательно подхода и время на согласование текста структуры страницы."}, {"id": 1002, "dir": "Работа с сайтом", "name": "Улучшение страницы контактов /contacts", "desc": "Удобная форма, интерактивная карта, контакты по отделам.", "res_plan": "CR отправки формы: с 3% - 5-6% Drop-off на форме: с 40% - 20-25% Доля лидов с корректно заполненными данными: с 70% - 85", "due": "до 01.04.2026", "agree": "Вера Юркевич Роман Бубен", "budget": "", "st": "Выполнено", "res_actual": "Выполнено. Релиз состоялся 8 апреля 2026 г Отправка заявки Q4- 44 заявки План Q1 увеличение на 5-6% или 73–88 заявок Отправка заявки Q1- 16 заявок  Пл", "files": "https://bixbit.io/en/contacts", "comments": ""}, {"id": 1003, "dir": "Работа с сайтом", "name": "Перевод сайта на другие языки", "desc": "Определения необходимых языков для перевода (китайский, испанский, арабский).Перевод и создание согласованных языковых в", "res_plan": "Рост органического трафика с новых языковых версий: +15-20% Количество лидов с новых языков: +150-200 в квартал Прирост ", "due": "до 20.02.2026", "agree": "Вера Юркевич Роман Бубен", "budget": "", "st": "В работе", "res_actual": "Частично выполнено Перевод на испанский язык выполнен не на все стр тк ожидаем релиз новых обновленных страниц.  Трафика на новую языковую версию нет,", "files": "https://bixbit.io/esp/ams", "comments": "Частично выполнили задачу тк полная проработка зависит от обновленных страниц. При обновлении страниц меняется структура, текст, блоки и код страниц."}, {"id": 1004, "dir": "Работа с сайтом", "name": "Обновление футера на сайте", "desc": "Обновить визуал блока футтер. Упорядочить ссылки на страницы", "res_plan": "'Обновлён современный визуал футера, соответствующий текущему стилю сайта и бренду. Логичная и понятная структура ссылок", "due": "до 01.04.2026", "agree": "Вера Юркевич Роман Бубен", "budget": "", "st": "Выполнено", "res_actual": "Выполнено. Состоялся релиз 8 апреля 2026  Переход на страницы с сайта с футера: Страница      Q4     Q1    Лиды Q4   Лиды Q1 /firmware        1       ", "files": "https://bixbit.io/en/contacts", "comments": ""}, {"id": 1005, "dir": "Работа с сайтом", "name": "Доработать  продуктовую страницу охлаждение ASIC", "desc": "Доработать продуктовую страницу по охлаждению ASIC: чётко раскрыть ценность решения, типы охлаждения, сценарии применени", "res_plan": "Повышение конверсии страницы в заявки, рост времени на странице и доверия со стороны технических и бизнес-лиц. Страница ", "due": "до 01.04.2026", "agree": "Вера Юркевич Роман Бубен", "budget": "", "st": "Выполнено", "res_actual": "Выполнено. Макет отдан в тех отдел для релиза  Метрик на продуктовую страниц нет, тк это новые страницы которые еще в работе в тех отделе.", "files": "https://www.figma.com/design/MYQd6KgigMIydijuLhIX9f/Hardware-website?node-id=2217-13906&t=JuaGzCdTS0OQCd2J-4  https://bixbit.io/en/product-v2", "comments": "Добавлена в стэйджинговую ссылку одна продуктовая страница. Остальные 9 стр еще в работе в тех отделе. Данная задача требует много времени у тех специ"}, {"id": 1006, "dir": "Работа с сайтом", "name": "Переработка UX/UI блока документации", "desc": "Переработать UX/UI блока документации, сделать структуру более понятной и логичной: упростить навигацию, улучшить поиск,", "res_plan": "Пользователи быстрее находят нужную информацию, снижается количество ошибок и вопросов в поддержку, увеличивается время ", "due": "до 01.04.2026", "agree": "Вера Юркевич Роман Бубен", "budget": "", "st": "Выполнено", "res_actual": "Выполнено. Макет готов, для реализации ждем релиз              Общая динамика по странице /documentation  Показатель                                  ", "files": "https://www.figma.com/design/capnOaegcGInzqvSP9ZBAk/%3CDev%3E-Website---Mining-Solutions?node-id=4595-4183&p=f&t=3fyP7DtnYhv5Nap1-0", "comments": "Данная задача в работе тех отдела. Библиотеки преобрели тех отдел занимается внедрением. Обновленная информация"}, {"id": 1007, "dir": "Работа с сайтом", "name": "Апдейт страницы серверное направление", "desc": "Полностью обновить серверное направление: сделать разводящую страницу по серверам и две отдельные продуктовые страницы п", "res_plan": "Понятная навигация по серверным решениям, рост вовлечённости и конверсии в заявки. Серверное направление становится отде", "due": "до 01.04.2026", "agree": "Вера Юркевич Роман Бубен", "budget": "", "st": "Перенесено", "res_actual": "Задача перенесена на Q2 2026 Не хватило ресурса.  Сравнение: Q4 vs Q1 Показатель             Q4               Q1                  Изменение Визиты    ", "files": "", "comments": "Данная задача перенесена Q2. В Q1 задача являлась не приоритетной"}, {"id": 1008, "dir": "Работа с сайтом", "name": "ROI / Efficiency calculators - доработка нашего калькулятора эффективности проши", "desc": "Доработать существующий калькулятор эффективности прошивки, чтобы он учитывал реальный прирост TH/s, снижение энергопотр", "res_plan": "Пользователи наглядно видят экономический эффект от прошивки, понимать окупаемость инвестиций, что повышает доверие и ст", "due": "2026-04-01 00:00:00", "agree": "Вера Юркевич Роман Бубен", "budget": "", "st": "Перенесено", "res_actual": "Задача перенесена на Q2 2026 Не хватило ресурса.  Сравнение:   Q4 vs Q1 Показатель              Q4                      Q1                Изменение Ви", "files": "", "comments": "Перенесена на Q2. Задача являлась не приоритетной. Не приоритетная задача в Q1"}, {"id": 1009, "dir": "Работа с сайтом", "name": "Продумать калькулятор AMS (экономия времени / простоя), калькулятор охлаждения (", "desc": "Создать калькулятор для AMS, который показывает экономию времени и сокращение простоев при автоматическом управлении фер", "res_plan": "Пользователь наглядно понимает выгоду от использования AMS, сокращает сомнения перед регистрацией/покупкой, повышается в", "due": "2026-04-01 00:00:00", "agree": "Вера Юркевич Роман Бубен", "budget": "", "st": "Перенесено", "res_actual": "Задача перенесена на Q2 2026 Не хватило ресурса.", "files": "", "comments": "Очень объемная и сложная задача. Требует много ресурсов дизайна и тех отдела."}, {"id": 1010, "dir": "Работа с сайтом", "name": "Внедрение Live Demo AMS", "desc": "Основная цель: сделать демо доступ в AMS с режимом просмотра, чтобы клиент мог до регистрации познакомится с нашей систе", "res_plan": "После релиза Live Demo AMS вырос рост интереса и доверия к продукту: пользователи смогут посмотреть систему до регистрац", "due": "2026-01-20 00:00:00", "agree": "Вера Юркевич Роман Бубен", "budget": "", "st": "Выполнено", "res_actual": "Выполнено. Провели настройку, виртуальных устройств, создали блок на сайте для Live Demo.  Сравнение: Q4 vs Q1 Показатель                 Q4          ", "files": "https://www.figma.com/design/8dn3816YIGUQAi2m2UjNSI/%3CDesign%3E-Website---Mining-Solutions?node-id=6564-7709&t=QlXGtSDmJ1rnKv17-0", "comments": "Отдана на релиз в тех отдел. Трудность состояла в том, чтобы внести правки по устройствам в моделированную Demo AMS."}, {"id": 1011, "dir": "Работа с сайтом", "name": "Переработка главной страницы сайта /En /Ru", "desc": "Повысить конверсию главной страницы и сделать ценность продукта понятной с первого экрана.", "res_plan": "Улучшена структура и подача оффера, усилены CTA, снижены отказы и увеличено количество целевых действий. После улучшения", "due": "2026-04-01 00:00:00", "agree": "", "budget": "", "st": "В работе", "res_actual": "В процессе. ТЗ подготовлено, процесс согласования ТЗ  Главная /EN  Сравнение:  Q4) vs Q1 Показатель                      Q4                 Q1        ", "files": "Критерии проработки ТЗ для главной страницы страницы сайта  https://www.figma.com/design/hQ00znL58BTbI09wlZprnq/Home-page?node-id=0-1&t=VqDuS5KUk3PkHm", "comments": "Объемная задача, требует тщательной проработки тк главная страница это лицо нашего сайта и компании. Создано ТЗ, сформирована структура сайта, вносим "}, {"id": 1012, "dir": "Работа с сайтом", "name": "Поиск на сайте", "desc": "Добавления поиск на сайте для быстрого перемещенияРеализовать на сайте функционал поиска, который позволит пользователям", "res_plan": "Пользователь вводит запрос в строку поиска и получает список релевантных страниц сайта, что упрощает навигацию и ускоряе", "due": "", "agree": "", "budget": "", "st": "В работе", "res_actual": "В процессе. Идет процесс уточнения правильной реализации поиска на сайте  от тех отдела.", "files": "", "comments": "Данная задача в тех отделе, требуется время для граммотного поиска решения и реализации задачи"}, {"id": 1013, "dir": "SEO", "name": "Создание и публикация 1–2 новых HowTo-статей (EN)", "desc": "Написание и размещение статей формата HowTo под ключевые запросы с высоким потенциалом AEO (AI Overviews) для привлечени", "res_plan": "Органика (посетители) за Q4: Google - 11447 Yandex - 4455  Лиды:  Google - 1042 Yandex - 136  Планируем за Q1 2026:  Пос", "due": "до 01.04.2026", "agree": "Вера Юркевич", "budget": "2300 Евро в мес 2700 Линкбилдинг 500-1000$ копирай", "st": "В работе", "res_actual": "Итого за Q1 2026  Посетители (органика) Google: 8 695 визитов Yandex: 2 117 визитов  Лиды  Google: 216 лидов Yandex: 33 лидов", "files": "Отчет по трафику на сайт BiXBiT", "comments": ""}, {"id": 1014, "dir": "SEO", "name": "Проверка всех EN-страниц на наличие микроразметки (FAQ, HowTo, Article)", "desc": "Аудит существующих страниц на предмет структурированных данных, выявление и внедрение недостающей микроразметки для улуч", "res_plan": "", "due": "до 01.04.2027", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1015, "dir": "SEO", "name": "Продолжение линкбилдинга (EN/RU)", "desc": "Получение внешних ссылок с трастовых площадок на ключевые страницы сайта для повышения их позиций в поиске и роста общег", "res_plan": "", "due": "до 01.04.2028", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1016, "dir": "SEO", "name": "Адаптация 1–2 англоязычных статей на RU-версию сайта + soft-intent оптимизация", "desc": "Перевод и адаптация английского контента с доработкой под российский рынок и soft-интенты (обучение, решение проблем, со", "res_plan": "", "due": "до 01.04.2029", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1017, "dir": "SEO", "name": "Публикация 2 новых статей на русском языке по часто задаваемым вопросам", "desc": "Создание контента на основе популярных пользовательских запросов для SEO и поддержки клиентского сервиса.", "res_plan": "", "due": "до 01.04.2030", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1018, "dir": "SEO", "name": "Юзабилити-аудит продуктовых страниц (RU)", "desc": "Анализ структуры, навигации, призывов к действию и контента на RU-продуктовых страницах с целью повышения конверсии.", "res_plan": "", "due": "до 01.04.2031", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1019, "dir": "SEO", "name": "Создание контент-хаба на тему “Mining Management” (EN)", "desc": "Построение тематического центра с основным материалом и кластером дочерних статей вокруг управления майнингом (для SEO и", "res_plan": "", "due": "до 01.04.2032", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1020, "dir": "SEO", "name": "Создание и внедрение страниц авторов + schema разметка (EN)", "desc": "Добавление персонализированных страниц авторов блога с биографиями и структурированной разметкой для улучшения E-E-A-T и", "res_plan": "", "due": "до 01.04.2033", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1021, "dir": "SEO", "name": "Обновление и микроразметка раздела FAQ (RU)", "desc": "Переоформление блока часто задаваемых вопросов с внедрением schema.org разметки, улучшением формулировок и добавлением с", "res_plan": "", "due": "до 01.04.2034", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1022, "dir": "SEO", "name": "Сбор и кластеризация ключевых слов под новогодние и сезонные офферы (RU)", "desc": "Анализ и группировка ключей под зимние акции и предложения — подготовка к запуску сезонных кампаний и статей.", "res_plan": "", "due": "до 01.04.2035", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1023, "dir": "SEO", "name": "Публикация итогового кейса по AMS (EN)", "desc": "Создание подробного кейс-материала по внедрению AMS с результатами и визуализацией — для привлечения новых B2B-клиентов ", "res_plan": "", "due": "до 01.04.2036", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1024, "dir": "SEO", "name": "AEO-оптимизация страниц AMS и Firmwares (EN)", "desc": "Улучшение структуры контента, формулировок и разметки под требования AI Overviews для повышения видимости страниц в AI-в", "res_plan": "", "due": "до 01.04.2037", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1025, "dir": "SEO", "name": "Запуск спецпроекта «Выбор прошивки 2025» с интерактивом и SEO-блоками (RU)", "desc": "Создание страницы с выбором прошивок по параметрам (таблица, фильтры, кнопки) + контентный SEO-блок с вопросами и ответа", "res_plan": "", "due": "до 01.04.2038", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1026, "dir": "SEO", "name": "Проверка sitemap и robots.txt на ошибки, устранение дубликатов (RU)", "desc": "Аудит технической структуры сайта — исправление ошибок индексирования, удаление лишних URL и дубликатов.", "res_plan": "", "due": "до 01.04.2039", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1027, "dir": "SEO", "name": "Анализ GSC и GA4 по всем EN/RU-страницам для корректировки стратегии", "desc": "Сравнительный анализ поискового и поведенческого трафика по страницам — выявление просадок и точек роста.", "res_plan": "", "due": "до 01.04.2040", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1028, "dir": "SEO", "name": "A/B-тестирование заголовков блога и FAQ", "desc": "Запуск сплит-тестов для заголовков популярных страниц — определение, какие формулировки лучше привлекают трафик и клики.", "res_plan": "", "due": "до 01.04.2041", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1029, "dir": "SEO", "name": "Планирование контента и ключей на Q1 2026 (EN/RU)", "desc": "Формирование контентного плана и семантической структуры под ключевые темы и релевантные поисковые запросы следующего кв", "res_plan": "", "due": "до 01.04.2042", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1030, "dir": "Контекстная реклама", "name": "Яндекс", "desc": "", "res_plan": "", "due": "", "agree": "", "budget": "3000 $ -6000$ в квартал", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1031, "dir": "Контекстная реклама", "name": "Ведение РК компаний", "desc": "Планируется активное ведение всех рекламных кампаний: мониторинг ставок, ключей, CTR и конверсий. Будут реализованы A/B-", "res_plan": "Вышли на окупаемость рекламных кампаний, оптимизировали бюджет без потери трафика и лидов. Использование преимущественно", "due": "до 01.04.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В работе", "res_actual": "Не выполнено. Связи с обновлением в гугле правил безопасности наши РК не допускаются. Гугл расценивает что мы продвигаем бесплатное приложение. Сейчас", "files": "", "comments": "Предпринял попытки связаться с тех поддержкой гугла, но нормального ответа я так и не получил. Есть вариант по знакомству проконсультироваться по данн"}, {"id": 1032, "dir": "Контекстная реклама", "name": "Оптимизация РК", "desc": "Планируется активная оптимизация всех рекламных кампаний: мониторинг ставок, ключей, CTR и конверсий. Будут реализованы ", "res_plan": "", "due": "до 01.04.2027", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1033, "dir": "Контекстная реклама", "name": "Тестирование новых форматов рекламы", "desc": "Тестирование новых рекламных форматов", "res_plan": "Провести тест различный рекламных форматов и выявить самые эффективные", "due": "до 01.04.2028", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1034, "dir": "Контекстная реклама", "name": "Google", "desc": "", "res_plan": "", "due": "", "agree": "", "budget": "От 9000 до 18 000$ в мес", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1035, "dir": "Контекстная реклама", "name": "Ведение РК компаний", "desc": "Планируется активное ведение всех рекламных кампаний: мониторинг ставок, ключей, CTR и конверсий. Будут реализованы A/B-", "res_plan": "Вышли на окупаемость рекламных кампаний, оптимизировать бюджет без потери трафика и лидов. Использование преимущественно", "due": "до 01.04.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В работе", "res_actual": "Не выполнено. Связи с обновлением в гугле правил безопасности наши РК не допускаются. Гугл расценивает что мы продвигаем бесплатное приложение. Сейчас", "files": "", "comments": "Предпринял попытки связаться с тех поддержкой гугла, но нормального ответа я так и не получил. Есть вариант по знакомству проконсультироваться по данн"}, {"id": 1036, "dir": "Контекстная реклама", "name": "Оптимизация и окупаемость РК", "desc": "Планируется активная оптимизация всех рекламных кампаний: мониторинг ставок, ключей, CTR и конверсий. Будут реализованы ", "res_plan": "", "due": "до 01.04.2027", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1037, "dir": "Контекстная реклама", "name": "Тестирование новых форматов рекламы", "desc": "Тестирование новых рекламных форматов гео", "res_plan": "Пакистан, Чили, Кения, Нигерия, Замбия, Оман", "due": "до 01.04.2028", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1038, "dir": "Контекстная реклама", "name": "Продвижение мобильного приложения AMS после релиза", "desc": "Разработать и реализовать стратегию продвижения мобильного приложения AMS с целью увеличения установок среди целевой B2B", "res_plan": "Рост количества установок мобильного приложения AMS. Настроена прозрачная аналитика по установкам, активациям и использо", "due": "до 01.04.2029", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "2000 - 4000$ в мес", "st": "Перенесено", "res_actual": "Не выполнено. Продвижение мобильного приложения AMS, запланировано сразу после публикации в Appstore тех отделом Перенесена задача на Q2", "files": "", "comments": ""}, {"id": 1039, "dir": "Контекстная реклама", "name": "Найти партнеров по запуску контекстной рекламы Baidu", "desc": "Найти и привлечь партнёров, которые помогут с регистрацией и верификацией рекламного кабинета Baidu Ads (юридические и т", "res_plan": "Успешно зарегистрирован и верифицирован рекламный кабинет Baidu Ads. Получены все доступы и права для самостоятельного у", "due": "до 01.04.2030", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "от 3000$ - до 7 000 $", "st": "Перенесено", "res_actual": "Не выполнено. Данная задача перенесена на Q2-Q3 тк сложная и объемная задача, требеует времени и ресурсов.", "files": "", "comments": "Общаюсь с подрядчиками которые занимаются открытием кабинета в Baidu ads и Wechat. На данный момент запрашивают скан бизнес лицензии чтобы проверить н"}, {"id": 1040, "dir": "Лидогенерация", "name": "Расширение базы лидов по новым регионам в Apollo", "desc": "Поиск и сбор новых потенциальных клиентов в перспективных регионах (например, Азия, Латинская Америка, Восточная Европа)", "res_plan": "'Вышли на уровень контактов C-level Обеспечили заинтерисованность продуктом Вышли на уровень  делового общения и обсужде", "due": "до 01.04.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "Перенесено", "res_actual": "Не выполнено. Столкнулись с проблемой блокировки аккаунта фейкового сотрудника для лидогенерации. Тех поодержка отказывается разблокировать аккаунт, т", "files": "", "comments": "Основная трудность это разблокировка нашего фейкового аккаунта,( тех поддержка линкедин отказывается разблокировать наш аккаунт тк считает что у нас г"}, {"id": 1041, "dir": "Лидогенерация", "name": "Создание новых цепочек сообщений LinkedIn Helper", "desc": "Разработка персонализированных сценариев коммуникации по новым сегментам: холодные лиды, прогретые, по интересу (AMS, пр", "res_plan": "", "due": "до 01.04.2027", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "15 дол в мес Линкедин хелпер 100 дол в мес премиум", "st": "В ожидании", "res_actual": "", "files": "https://prnt.sc/UdVisMahtJ7k", "comments": ""}, {"id": 1042, "dir": "Лидогенерация", "name": "A/B-тестирование LinkedIn-цепочек", "desc": "Проведение тестов по ключевым элементам: темы, формат писем/сообщений, CTA, длительность прогрева. Определение самых эфф", "res_plan": "", "due": "до 01.04.2028", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1043, "dir": "Лидогенерация", "name": "Повторная обработка неответивших контактов", "desc": "Выделение «молчаливых» лидов и запуск повторных цепочек или касаний с другими офферами, аргументами или каналами (ретарг", "res_plan": "", "due": "до 01.04.2029", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1044, "dir": "Лидогенерация", "name": "Ведение аналитики и формирование отчётов", "desc": "Отслеживание эффективности лидогенерации: open rate, reply rate, конверсии в заявки и лиды. Регулярная визуализация и эк", "res_plan": "", "due": "до 01.04.2030", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1045, "dir": "Лидогенерация", "name": "Подготовка стратегии масштабирования на Q1 2027", "desc": "Анализ полученных результатов за текущий период и формирование плана расширения объёмов лидогенерации, гео, офферов и ка", "res_plan": "Подготовили план на 2027 год", "due": "до 01.04.2031", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1046, "dir": "Таргетированная реклама", "name": "Проработка новых источников трафика: Linkedin ads разработка плана, тестирование", "desc": "Продолжать ведение Linkedin ads.  Создание плана по запуску РК в linkedin ads на англоязычную аудиторию, запуск РК на це", "res_plan": "Трафик Linkedin ads При бюджете $1 000 / мес: Ожидаемый трафик 3 000–6 000 визитов. Лиды:                 Firmware  60–8", "due": "до 01.04.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "1000 - 3000 дол в мес", "st": "Перенесено", "res_actual": "Не выполнено. Столкнулись с проблемой блокировки аккаунта фейкового сотрудника для лидогенерации. Тех поодержка отказывается разблокировать аккаунт, т", "files": "https://prnt.sc/UdVisMahtJ7k", "comments": "'Основная трудность это разблокировка нашего фейкового аккаунта,( тех поддержка линкедин отказывается разблокировать наш аккаунт тк считает что у нас "}, {"id": 1047, "dir": "Таргетированная реклама", "name": "Продолжение работы с  Quora", "desc": "Продолжить работу с платформой Quora как каналом экспертного присутствия и привлечения целевой B2B-аудитории. Включает р", "res_plan": "Рост видимости бренда в профильных B2B-темах на Quora Стабильный приток целевого трафика на сайт. Повышено доверия к про", "due": "до 01.04.2026", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1048, "dir": "Planfix", "name": "Улучшение пространства Прошивки + AMS", "desc": "Обеспечение бесперебойного поступления и корректной обработки лидов в CRM: контроль заполнения карточек, стадий, тегов и", "res_plan": "Обеспечили удобную работу с базой контактов. Поовели анализ и фильтрацию", "due": "до 1.02.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "примерно: 1000 - 2000 дол", "st": "В работе", "res_actual": "Провел встречу с интегратором, определили доработки по воронке. Определили какую информацию необходимо предоставить ему для дальнейшей работы.", "files": "https://bixbit.planfix.com/task/289672", "comments": ""}, {"id": 1049, "dir": "Planfix", "name": "Настройка отчета по задачам сотрудников отдела маркетинга", "desc": "Настроить корректную выгрузку отчета для Веры Юркевич по сотрудникам. Необходимо отслеживание задач по каждому сотрудник", "res_plan": "Создали настройку отчета по задачам сотрудников отдела маркетинга. Контроль выполнение задач и соблюдение дедлайна", "due": "до 01.02.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В работе", "res_actual": "Провел встречу с интегратором, определили логику создания отчета, необходимые данные для настройки отчета по всем воронкам.", "files": "https://bixbit.planfix.com/task/289672", "comments": ""}, {"id": 1050, "dir": "Planfix", "name": "Разработка и релиз воронки по направлению хард асиков и по серверному направлени", "desc": "Разработать отдельную воронку под хард и серверное направление.", "res_plan": "Разработали пространства для продуктов хард направление. Обеспечили удобство работы с коллегами, быстро отвечаем на запр", "due": "до 01.02.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В работе", "res_actual": "Разработали и определили статусы, поля, логику воронки. Провел встречу с Алексеем интегратором ПФ. Интегратор взял в работу воронку по Hard направлени", "files": "https://bixbit.planfix.com/?action=planfix&task=17835192&comment=83712228", "comments": ""}, {"id": 1051, "dir": "Сквозная аналитика", "name": "Подготовить план по улучшению аналитики", "desc": "Подготовить решение совместно с тех отделом для настройки сквозной аналитики для отслеживания эффективности каждого плат", "res_plan": "Отслеживаем лидов с каждой РК для анализа эффективности работы", "due": "до 01.04.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "собственные ресурсы", "st": "Перенесено", "res_actual": "Данная задача перенесена на Q2", "files": "", "comments": "Сейчас в поиске инструмента, который будет соответствовать нашим требованиям отчета и нашему направлению бизнеса. Сложность найти подходящий и по прие"}, {"id": 1052, "dir": "Сквозная аналитика", "name": "Подготовить новый формат отчета по кварталу и год", "desc": "Использовать инструменты для отчета ввиде дашборда ( с графиками, таблицами, сравнительная статистика с предыдущими пери", "res_plan": "Подготовили новый формат отчета в виде дашборда с графиками, цифрами и описанием выполненных задач. Получили конкретные ", "due": "до 01.04.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "Перенесено", "res_actual": "Данная задача перенесена на Q2", "files": "", "comments": ""}, {"id": 1053, "dir": "Сквозная аналитика", "name": "Подготовить медиаплан и прогноз бюджета на Q1 2027", "desc": "На основе аналитики сформировать финансовую модель и медиаплан для следующего квартала.", "res_plan": "Подготовили медиаплан на 2027 год", "due": "до 01.04.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1054, "dir": "Изучение и внедрение новых инструментов ", "name": "Проработать Direct media buying (прямое размещение), акцент на локальные нишевые", "desc": "Внедрить,  инструмент для наших продуктов. Собрать информацию, подготовить план,совместно с Сашей.  Согласовать с Верой ", "res_plan": "Сформирован список релевантных локальных нишевых B2B-порталов для прямого размещения рекламы. площадки Получены медиакит", "due": "до 15.01.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "от 500 - 1500 дол", "st": "Выполнено", "res_actual": "Выполнено. Проработали площадки для прямого размещения.  По итогам анализа определили, что данные площадки, где можно размещать баннеры о своем продук", "files": "сервисы для размещения рекл баннеров", "comments": ""}, {"id": 1055, "dir": "Изучение и внедрение новых инструментов ", "name": "Внедрить Programmatic рекламу", "desc": "Внедрить programmatic-рекламу как масштабируемый канал привлечения B2B-аудитории. В рамках задачи - выбрать DSP-платформ", "res_plan": "Запущен и протестирован канал programmatic-рекламы. Достигнут целевой охват релевантной B2B-аудитории. Получен качествен", "due": "до 15.02.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "Выполнено", "res_actual": "Выполнено. Проанализировали инструменты для размещения баннерной и текстового объявления. Выделили 2 инструмента для тестирования: HyperLab, A-ADS дан", "files": "сервисы для размещения рекл баннеров", "comments": ""}, {"id": 1056, "dir": "Изучение и внедрение новых инструментов ", "name": "Demandbase Выявление горячих аккаунтов", "desc": "Сбор и анализ intent‑сигналов по Tier‑1 аккаунтам, прогнозирование готовности к покупке", "res_plan": "Сосредоточение ресурсов на аккаунтах с высоким потенциалом сделки, сокращение цикла продажи", "due": "до 15.02.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "Возможно нужны подписки суммы не известны", "st": "Перенесено", "res_actual": "Данные задачи перенесены на Q2 тк столкнулись с блокировкой и проблемой основных рекламных источников.  В квартале Q2 поставлю в статус приоритетных з", "files": "", "comments": ""}, {"id": 1057, "dir": "Изучение и внедрение новых инструментов ", "name": "RollWorks Таргетинг и ретаргетинг", "desc": "Настройка account-based рекламы (LinkedIn, Display, YouTube) по спискам TAL", "res_plan": "Увеличение вовлечения нужных компаний, рост meetings с decision-makers", "due": "до 15.02.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1058, "dir": "Изучение и внедрение новых инструментов ", "name": "ZoomInfo Lead enrichment", "desc": "Обогащение данных аккаунтов и контактов, выявление новых целевых лиц внутри компании", "res_plan": "Более точные контакты, меньше потерь при холодном outreach", "due": "до 15.02.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1059, "dir": "Изучение и внедрение новых инструментов ", "name": "Clearbit Определение анонимных посетителей", "desc": "Идентификация компаний, посещающих сайт, и сопоставление с TAL", "res_plan": "Расширение базы активных аккаунтов, повышение конверсии в лиды", "due": "до 15.02.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1060, "dir": "Изучение и внедрение новых инструментов ", "name": "Qualified B2B чат и engagement", "desc": "Персонализированное общение с decision-makers на сайте, интеграция с Salesforce", "res_plan": "Увеличение meetings с топ‑аккаунтами, сокращение холодных контактов", "due": "до 15.02.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 1061, "dir": "Работа с Appstore, Google play", "name": "Публикация системы мониторинга в Store и Google play (После релиза)", "desc": "Публикация в Store и Google play системы мониторинга AMS, правильное заполнение формы согласно ТЗ Promotional Text. Увел", "res_plan": "Система мониторинга успешно опубликована и доступна для скачивания в App Store и Google Play. Приложение прошло модераци", "due": "до 31.12.2026", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "Собственные ресурсы", "st": "Выполнено", "res_actual": "Выполнено. Все необходимы задачи что требовалось от отдела маркетинга выполнено.  Для публикации в Appstore все файлы и информация передана в тех отде", "files": "https://docs.google.com/document/d/10IVu1iyp-r50Hv1tcICLI4A7cEU4US4YH4hI42afHJU/edit?tab=t.8yz7i49h6wbt", "comments": ""}, {"id": 1062, "dir": "Проработка инструментов удержания трафик", "name": "Microsoft Clarity, Hotjar, Optimizely / VWO / Google Optimize", "desc": "Анализировать поведение пользователей на сайте, выявлять проблемные точки, проводить A/B-тесты и улучшать UX.", "res_plan": "Повышение удержания посетителей, увеличение конверсий и улучшение пользовательского опыта на сайте.", "due": "2026-04-01 00:00:00", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "Выполнено", "res_actual": "Выполнено. Проанализировали инструменты, выделили оптимальный, внедрили на сайт для отслеживания статистики. Активно используем", "files": "https://clarity.microsoft.com/projects/view/v2csdqs11l/dashboard?date=Custom&end=1774990799999&start=1767214800000", "comments": ""}, {"id": 1063, "dir": "Cистемы мониторинга конкурентов и прошив", "name": "Cистемы мониторинга конкурентов и прошивок", "desc": "Анализ платных систем мониторинга конкурентов и прошивок, которая отслеживает новые релизы, функциональные обновления, ц", "res_plan": "Получаем актуальную информацию о конкурентах и рынке прошивок, что позволяет быстрее принимать решения по развитию проду", "due": "", "agree": "Вера Юркевич", "budget": "", "st": "В работе", "res_actual": "Не выполнено. В данном квартале тех отдел не анализировал системы мониторинга конкурентов. Я выполняю данную задачу после подготовительной работы от т", "files": "", "comments": "Данная задача была не в приоритете. Моя задача добавлять сравнения между мониторинговой системой AMS  и AMS конкурентов. До этого этапа регистрацию,оп"}, {"id": 1064, "dir": "Разработка чат бота", "name": "Создание чат бота для получения триал версии прошивки", "desc": "Бот в Telegram с коротким опросом (модель ASIC, количество устройств) и автоматической выдачей ссылки на Whatsminer и за", "res_plan": "квалифицированные лиды \tрост конверсии в скачивание и установку \tсегментированная база", "due": "", "agree": "", "budget": "", "st": "Выполнено", "res_actual": "Выполнено. Квалифицированные лиды, рост конверсии в скачивание и установку, сегментированная база", "files": "https://t.me/bixbit_firmware_selection_bot?start=c1775050469755-ds", "comments": ""}, {"id": 1065, "dir": "Разработка чат бота", "name": "Создание чат бота для розыгрыша", "desc": "Регистрация через бот, выполнение условий, выдача номера участника и уведомление о результатах.", "res_plan": "быстрый сбор контактов \tрост вовлеченности и трафика к стенду \tбаза для дальнейшего прогрева", "due": "", "agree": "", "budget": "", "st": "Выполнено", "res_actual": "Выполнено.  Быстрый сбор контактов, рост вовлеченности и трафика к стенду, база для дальнейшего прогрева", "files": "https://t.me/bixbit_promo_bot?start=c1775117284507-ds", "comments": ""}];
+const RAW_Q2=[{"id": 3000, "dir": "Сайт", "name": "Обновление блога и структуры /blog", "desc": "Новая рубрикация, улучшенная структура, внедрение превью и внутренних ссылок.", "res_plan": "Рост конверсии из блога на продуктовые страницы: с 15% - 20-25% Конверсия в лид-форму / регистрация в AMS / скачивание: ", "due": "до 30 мая", "agree": "Вера Юркевич Роман Бубен", "budget": "Собственные ресурсы  При необходимости: Работа под", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3001, "dir": "Сайт", "name": "Редизайн страницы «О нас» /about", "desc": "Усиление блока экспертизы, командной фотографии, добавление инфографики.", "res_plan": "'Увеличение визитов с 5% - 7-8% Время на странице (time on page): с 1:20 - 2:00 минуты'", "due": "до 10 мая", "agree": "Вера Юркевич Роман Бубен", "budget": "", "st": "Макет в дизайне", "res_actual": "", "files": "", "comments": ""}, {"id": 3002, "dir": "Сайт", "name": "Перевод сайта на другие языки", "desc": "Добавление языковые версии сайта ( Испанский)", "res_plan": "Из выбранных стран и языков за квартал получили такие результаты: из Бразилии — 3 500 посетителей и 105 лидов с приросто", "due": "до 10 мая", "agree": "Вера Юркевич Роман Бубен", "budget": "", "st": "Выполнено", "res_actual": "", "files": "", "comments": ""}, {"id": 3003, "dir": "Сайт", "name": "Перевод сайта на другие языки", "desc": "Добавление языковые версии сайта ( Китайский)", "res_plan": "Расширение охвата на китайский рынок, рост органического и прямого трафика из региона, повышение доверия со стороны лока", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3004, "dir": "Сайт", "name": "Внедрение монетизации AMS Hub", "desc": "Внедрить систему монетизации AMS Hub, включая платные тарифы, подписки и биллинг для клиентов, чтобы превращать использо", "res_plan": "Создан постоянный поток дохода от AMS Hub, повышена ценность платформы для клиентов, улучшена конверсия бесплатных польз", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3005, "dir": "Сайт", "name": "Доработать  продуктовую страницу охлаждение ASIC", "desc": "Доработать продуктовую страницу по охлаждению ASIC: чётко раскрыть ценность решения, типы охлаждения, сценарии применени", "res_plan": "Повысили конверсии страницы в заявки, вырос рост времени на странице и доверия со стороны технических и бизнес-лиц. Стра", "due": "до 30 Апреля", "agree": "", "budget": "", "st": "В тех отделе", "res_actual": "", "files": "", "comments": ""}, {"id": 3006, "dir": "Сайт", "name": "Апдейт страницы серверное направление", "desc": "Полностью обновить серверное направление: сделать разводящую страницу по серверам и две отдельные продуктовые страницы п", "res_plan": "Понятная навигация по серверным решениям, рост вовлечённости и конверсии в заявки. Серверное направление становится отде", "due": "до 30 апреля", "agree": "", "budget": "", "st": "Макет в дизайне", "res_actual": "", "files": "", "comments": ""}, {"id": 3007, "dir": "Сайт", "name": "Внедрение Live Demo AMS", "desc": "Основная цель: сделать демо доступ в AMS с режимом просмотра, чтобы клиент мог до регистрации познакомится с нашей систе", "res_plan": "После релиза Live Demo AMS увеличился рост интереса и доверия к продукту: пользователи смогут посмотреть систему до реги", "due": "до 10 мая", "agree": "", "budget": "", "st": "В тех отделе", "res_actual": "", "files": "", "comments": ""}, {"id": 3008, "dir": "Сайт", "name": "Переработка UX/UI блока документации", "desc": "Переработать UX/UI блока документации, сделать структуру более понятной и логичной: упростить навигацию, улучшить поиск,", "res_plan": "Пользователи быстрее находят нужную информацию, снизилось количество ошибок и вопросов в поддержку, увеличилось время вз", "due": "до 1 мая", "agree": "", "budget": "", "st": "В тех отделе", "res_actual": "", "files": "", "comments": ""}, {"id": 3009, "dir": "Сайт", "name": "Разработка единого калькулятора эффективности майнинговой инфраструктуры (ROI / ", "desc": "Доработка калькулятора эффективности прошивки с учётом реального прироста производительности, энергопотребления и влияни", "res_plan": "Пользователь наглядно видит экономический эффект от прошивки и внедрения AMS, понимает окупаемость инвестиций и снижение", "due": "", "agree": "", "budget": "", "st": "Макет в дизайне", "res_actual": "", "files": "", "comments": ""}, {"id": 3010, "dir": "Сайт", "name": "Переработка главной страницы сайта /En /Ru", "desc": "Повысить конверсию главной страницы и сделать ценность продукта понятной с первого экрана.", "res_plan": "Улучшена структура и подача оффера, усилены CTA, снижены отказы и увеличено количество целевых действий. После улучшения", "due": "до 15 Мая", "agree": "", "budget": "", "st": "Макет в дизайне", "res_actual": "", "files": "", "comments": ""}, {"id": 3011, "dir": "Сайт", "name": "Создание страницы под прокси", "desc": "Создание и запуск посадочной страницы, посвященной прокси-сервису. Страница должна раскрывать продукт, его сценарии испо", "res_plan": "Запущенная страница, готовая к привлечению трафика и генерации заявок: понятная структура, донесенная ценность продукта,", "due": "до 20 Мая", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3012, "dir": "Сайт", "name": "Внедрение CMS системы на сайт", "desc": "Внедрение CMS на сайт для упрощения управления контентом, обновления страниц и масштабирования структуры без участия раз", "res_plan": "Ускорение публикации и редактирования контента, снижение зависимости от разработки, повышение гибкости в работе с SEO и ", "due": "до 20 Мая", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3013, "dir": "Сайт", "name": "Обновление продуктов стр Antminer", "desc": "Разработка продуктовой страницы для Antminer с акцентом на ключевые характеристики, преимущества, совместимость с прошив", "res_plan": "Повышение вовлечённости пользователей, улучшение понимания продукта и рост конверсии в заявки за счёт более понятной и п", "due": "до 1 Мая", "agree": "", "budget": "", "st": "Макет в дизайне", "res_actual": "", "files": "", "comments": ""}, {"id": 3014, "dir": "Сайт", "name": "Внедрение активноестей для удержания на сайте", "desc": "Внедрение интерактивных элементов и активностей на сайте (калькуляторы, сценарии расчётов, динамический контент) для уве", "res_plan": "Рост времени на сайте и глубины просмотра, повышение вовлечённости и снижение отказов, что в итоге положительно влияет н", "due": "до 15 июня", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3015, "dir": "Сайт", "name": "Занесение гл стр сайта в белый список РФ разблокировка.", "desc": "Организация включения главной страницы сайта в белый список в РФ и выполнение необходимых технических и юридических треб", "res_plan": "Восстановление доступа к сайту для пользователей из РФ, рост трафика из региона и возвращение конверсий из ранее недосту", "due": "до 15 Мая", "agree": "", "budget": "", "st": "В работе", "res_actual": "", "files": "", "comments": ""}, {"id": 3016, "dir": "Сайт", "name": "Аналитика сайта bixbit usa", "desc": "Проведение комплексной аналитики сайта BiXBiT (USA) с оценкой источников трафика, поведения пользователей, конверсий, эф", "res_plan": "Выявление точек роста и устаревшего контента, формирование рекомендаций по обновлению материалов, а также по увеличению ", "due": "до 5 мая", "agree": "Совместно с машей", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3017, "dir": "Внедрение ИИ инструментов", "name": "Автоматизация ручного сбора и агрегации маркетинговой аналитики с помощью AI-аге", "desc": "Внедрить AI-агента на базе OpenClaw для автоматизации E2E-процесса сквозной маркетинговой аналитики.", "res_plan": "Снижение времени на задачу: ручной труд заменён автоматизированным процессом, работа занимает минуты вместо часов. Эконо", "due": "до 20 июня", "agree": "Вера Юркевич", "budget": "необходимо сделать запрос цены исходя из списка на", "st": "В работе", "res_actual": "", "files": "https://dzislandad-del.github.io/bixbit-dashboard/", "comments": ""}, {"id": 3018, "dir": "SEO", "name": "Юзабилити-аудит продуктовых страниц (RU)", "desc": "Анализ структуры, навигации, призывов к действию и контента на RU-продуктовых страницах с целью повышения конверсии.", "res_plan": "Планируем за Q2 2026:  Посетители (органика) Google: 10 000 визитов Yandex: 5 000 визитов Лиды Google: 450 лидов Yandex:", "due": "в течении всего квартала", "agree": "Вера Юркевич", "budget": "2300 Евро в мес 2700 Линкбилдинг 500-1000$ копирай", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3019, "dir": "SEO", "name": "Создание контент-хаба на тему “Mining Management” (EN)", "desc": "Построение тематического центра с основным материалом и кластером дочерних статей вокруг управления майнингом (для SEO и", "res_plan": "", "due": "", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3020, "dir": "SEO", "name": "Обновление и микроразметка раздела FAQ (RU)", "desc": "Переоформление блока часто задаваемых вопросов с внедрением schema.org разметки, улучшением формулировок и добавлением с", "res_plan": "", "due": "", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3021, "dir": "SEO", "name": "Сбор и кластеризация ключевых слов под новогодние и сезонные офферы (RU)", "desc": "Анализ и группировка ключей под зимние акции и предложения — подготовка к запуску сезонных кампаний и статей.", "res_plan": "", "due": "", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3022, "dir": "SEO", "name": "Публикация итогового кейса по AMS и firmware (RU/EN)", "desc": "Создание подробного кейс-материала по внедрению AMS с результатами и визуализацией — для привлечения новых B2B-клиентов ", "res_plan": "", "due": "", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3023, "dir": "SEO", "name": "AEO-оптимизация страниц AMS и Firmwares (EN/RU)", "desc": "Улучшение структуры контента, формулировок и разметки под требования AI Overviews для повышения видимости страниц в AI-в", "res_plan": "", "due": "", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3024, "dir": "SEO", "name": "Запуск спецпроекта «Выбор прошивки 2026» с интерактивом и SEO-блоками (RU)", "desc": "Создание страницы с выбором прошивок по параметрам (таблица, фильтры, кнопки) + контентный SEO-блок с вопросами и ответа", "res_plan": "", "due": "", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3025, "dir": "SEO", "name": "Проверка sitemap и robots.txt на ошибки, устранение дубликатов (RU)", "desc": "Аудит технической структуры сайта — исправление ошибок индексирования, удаление лишних URL и дубликатов.", "res_plan": "", "due": "", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3026, "dir": "SEO", "name": "Анализ GSC и GA4 по всем EN/RU-страницам для корректировки стратегии", "desc": "Сравнительный анализ поискового и поведенческого трафика по страницам — выявление просадок и точек роста.", "res_plan": "", "due": "", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3027, "dir": "SEO", "name": "A/B-тестирование заголовков блога и FAQ", "desc": "Запуск сплит-тестов для заголовков популярных страниц — определение, какие формулировки лучше привлекают трафик и клики.", "res_plan": "", "due": "", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3028, "dir": "SEO", "name": "Планирование контента и ключей на Q1 2026 (EN/RU)", "desc": "Формирование контентного плана и семантической структуры под ключевые темы и релевантные поисковые запросы следующего кв", "res_plan": "", "due": "", "agree": "Вера Юркевич", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3029, "dir": "SEO", "name": "Внедрение ИИ Агента", "desc": "Внедрение на сайт готового ИИ-агента, который автоматически выполняет SEO-функции в рамках пользовательского и поисковог", "res_plan": "Рост органического и поведенческого SEO-эффекта за счёт увеличения времени на сайте и глубины сессии. Улучшение индексац", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "https://docs.google.com/document/d/1q8e8Gb0mHoy56j8f8Xt5PzRBjosKhsXe/edit?usp=sharing&ouid=116766153551633645693&rtpof=true&sd=true", "comments": ""}, {"id": 3030, "dir": "Контекстная реклама", "name": "Яндекс", "desc": "", "res_plan": "", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3031, "dir": "Контекстная реклама", "name": "Ведение РК компаний Россия", "desc": "Планируется активное ведение всех рекламных кампаний: мониторинг ставок, ключей, CTR и конверсий. Будут реализованы A/B-", "res_plan": "Вышли на окупаемость рекламных кампаний, оптимизировали бюджет без потери трафика и лидов. Использование преимущественно", "due": "2026-05-01 00:00:00", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "3000$ - 6000$ в квартал", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3032, "dir": "Контекстная реклама", "name": "РК AMS", "desc": "Привлечение релевантных B2B-лидов, демонстрация ценности системы мониторинга и управления фермами, генерация регистраций", "res_plan": "Результат: В управлении через AMS: 100–200 устройств Совокупный прирост: +120 – 220 TH/s", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3033, "dir": "Контекстная реклама", "name": "РК Antminer в зависимости от сроков релиза", "desc": "Стимулирование скачиваний и установок кастомной прошивки Antminer, привлечение владельцев и операторов ферм с фокусом на", "res_plan": "Результат: Установки прошивки на 200–400 устройств Antminer Средний прирост: +80–120 TH/s на 100 устройств Совокупный пр", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3034, "dir": "Контекстная реклама", "name": "РК Whatsminer", "desc": "Привлечение трафика на прошивку Whatsminer, генерация установок и лидов от средних и крупных ферм, акцент на стабильност", "res_plan": "Результат: Установки прошивки на 200–400 устройств Whatsminer Средний прирост: +70–110 TH/s на 100 устройств Совокупный ", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3035, "dir": "Контекстная реклама", "name": "РК хард направление (определение гео на СНГ после ресерча)", "desc": "Запуск и тестирование рекламных кампаний по «хард»-направлению с предварительным ресёрчем и отбором наиболее перспективн", "res_plan": "Ожидаемый результат на данный момент подсчитать не возможно. ТК необходимо провести  предварительный анализ.", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3036, "dir": "Контекстная реклама", "name": "Оптимизация РК", "desc": "Планируется активная оптимизация всех рекламных кампаний: мониторинг ставок, ключей, CTR и конверсий. Будут реализованы ", "res_plan": "", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3037, "dir": "Контекстная реклама", "name": "Тестирование новых форматов рекламы", "desc": "Тестирование новых рекламных форматов", "res_plan": "Провели тест различный рекламных форматов и выявить самые эффективные", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3038, "dir": "Контекстная реклама", "name": "Google", "desc": "", "res_plan": "", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3039, "dir": "Контекстная реклама", "name": "Ведение РК компаний", "desc": "Планируется активное ведение всех рекламных кампаний: мониторинг ставок, ключей, CTR и конверсий. Будут реализованы A/B-", "res_plan": "Вышли на окупаемость рекламных кампаний, оптимизировали бюджет без потери трафика и лидов. Использование преимущественно", "due": "до 10 мая после снятия огранич", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "От 15 000 до 30 000$ в мес", "st": "В работе", "res_actual": "", "files": "", "comments": ""}, {"id": 3040, "dir": "Контекстная реклама", "name": "Запуск рекламной кампании на Испаноговорящие страны", "desc": "Запуск и ведение рекламных кампаний на испаноязычные страны с фокусом на Google Ads, использованием преимущественно поис", "res_plan": "Вышли на окупаемость рекламных кампаний, оптимизировали бюджет без потери трафика и лидов. Масштабирование эффективных с", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3041, "dir": "Контекстная реклама", "name": "РК AMS", "desc": "Привлечение релевантных B2B-лидов, демонстрация ценности системы мониторинга и управления фермами, генерация регистраций", "res_plan": "Результат: Подключение 80–120 устройств в год Прирост хешрейта: +266 – 533 TH/s в год", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3042, "dir": "Контекстная реклама", "name": "РК Antminer", "desc": "Стимулирование скачиваний и установок кастомной прошивки Antminer, привлечение владельцев и операторов ферм с фокусом на", "res_plan": "Результат: Установки прошивки: 80–120 устройств в год Прирост хешрейта: +266 – 533 TH/s в год", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3043, "dir": "Контекстная реклама", "name": "РК Whatsminer завист от релиза прошивки", "desc": "Привлечение трафика на прошивку Whatsminer, генерация установок и лидов от средних и крупных ферм, акцент на стабильност", "res_plan": "Результат: Установки прошивки: 80 –120 устройств в год Прирост хешрейта: +266 – 533 TH/s в год", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3044, "dir": "Контекстная реклама", "name": "РК хард направление (США,Европа, Азия, Лат. Америка)", "desc": "Запуск и тестирование рекламных кампаний по «хард»-направлению с предварительным ресёрчем и отбором наиболее перспективн", "res_plan": "входящие заявки (10+ MQL) с каждого кампейна", "due": "", "agree": "", "budget": "От 20 000 до 45 000", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3045, "dir": "Контекстная реклама", "name": "Google Ads на разные гео, usa, eu, latam", "desc": "Контекстная реклама по MDC и Cooling", "res_plan": "Запущенная реклама и входящие заявки (10+ MQL) с каждого кампейна", "due": "", "agree": "Совместная работа с Дарья Рабушко Согласование Вер", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3046, "dir": "Контекстная реклама", "name": "Оптимизация и окупаемость РК", "desc": "Планируется активная оптимизация всех рекламных кампаний: мониторинг ставок, ключей, CTR и конверсий. Будут реализованы ", "res_plan": "", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3047, "dir": "Контекстная реклама", "name": "Тестирование новых форматов рекламы", "desc": "Тестирование новых рекламных форматов гео", "res_plan": "Пакистан, Чили, Кения, Нигерия, Замбия, Оман", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3048, "dir": "Контекстная реклама", "name": "Продвижение мобильного приложения AMS", "desc": "Разработать и реализовать стратегию продвижения мобильного приложения AMS с целью увеличения установок среди целевой B2B", "res_plan": "Рост количества установок мобильного приложения AMS. Настроена прозрачная аналитика по установкам, активациям и использо", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "От 2000 - 4000$ в мес", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3049, "dir": "Контекстная реклама", "name": "Найти партнеров по запуску контекстной рекламы Baidu", "desc": "Найти и привлечь партнёров, которые помогут с регистрацией и верификацией рекламного кабинета Baidu Ads (юридические и т", "res_plan": "Успешно зарегистрирован и верифицирован рекламный кабинет Baidu Ads. Получены все доступы и права для самостоятельного у", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "Жду примерный бюджет от подрядчиков", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3050, "dir": "Контекстная реклама", "name": "Google Ads Campaign", "desc": "Формирование ключей, оффера, креатива ASIC направление", "res_plan": "Запущенная рекламная кампания и заявки с контекста, от 10 MQL, переходящих в SQL", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3051, "dir": "Лидогенерация", "name": "Расширение базы лидов по новым регионам в Apollo", "desc": "Поиск и сбор новых потенциальных клиентов в перспективных регионах (например, Азия, Латинская Америка, Восточная Европа)", "res_plan": "Вышли на уровень контактов C-level Обеспечили заинтерисованность продуктом Вышли на уровень  делового общения и обсужден", "due": "Запуск после прогрева Аккаунта", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "20$ в мес", "st": "В работе", "res_actual": "", "files": "", "comments": ""}, {"id": 3052, "dir": "Лидогенерация", "name": "Создание новых цепочек сообщений LinkedIn Helper", "desc": "Разработка персонализированных сценариев коммуникации по новым сегментам: холодные лиды, прогретые, по интересу (AMS, пр", "res_plan": "", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "50-100$ в мес премиум подписка + sales navigator", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3053, "dir": "Лидогенерация", "name": "Создание новых профилей", "desc": "Зарегистрировать новые аккаунты в Линкедин для масоовой лидогенерации", "res_plan": "", "due": "", "agree": "", "budget": "Собственные ресурсы", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3054, "dir": "Лидогенерация", "name": "A/B-тестирование LinkedIn-цепочек", "desc": "Проведение тестов по ключевым элементам: темы, формат писем/сообщений, CTA, длительность прогрева. Определение самых эфф", "res_plan": "", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3055, "dir": "Лидогенерация", "name": "Повторная обработка неответивших контактов", "desc": "Выделение «молчаливых» лидов и запуск повторных цепочек или касаний с другими офферами, аргументами или каналами (ретарг", "res_plan": "", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3056, "dir": "Лидогенерация", "name": "Ведение аналитики и формирование отчётов", "desc": "Отслеживание эффективности лидогенерации: open rate, reply rate, конверсии в заявки и лиды. Регулярная визуализация и эк", "res_plan": "", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3057, "dir": "Лидогенерация", "name": "Подготовка стратегии масштабирования на Q1 2027", "desc": "Анализ полученных результатов за текущий период и формирование плана расширения объёмов лидогенерации, гео, офферов и ка", "res_plan": "TH/s: +150", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3058, "dir": "Таргетированная реклама", "name": "Проработка новых источников трафика: Linkedin ads разработка плана, тестирование", "desc": "Продолжать ведение Linkedin ads.  Создание плана по запуску РК в linkedin ads на англоязычную аудиторию, запуск РК на це", "res_plan": "ASIC-устройства: не указаны / 0", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3059, "dir": "Таргетированная реклама", "name": "LinkedIn B2B Ads на разные гео, USA, EU, LATAM", "desc": "Lead Generation  Запуск таргетированной рекламы  LinkedIn Ads", "res_plan": "Запущенный рекламный кампейн и входящие заявки (10+ лидов, MQL) с каждого камейна", "due": "", "agree": "Совместная работа с Дарья Рабушко Согласование Вер", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3060, "dir": "Таргетированная реклама", "name": "LinkedIn B2B Ads", "desc": "Формирование оффера, креатива, запуск", "res_plan": "Запущенная рекламная кампания и первые входящие лиды - от 10 MQL переходящих в SQL", "due": "Запуск после прогрева Аккаунта", "agree": "Совместная задача с Ульяной Лозюк", "budget": "3000$ - 6000$ в мес в зависимости от количества РК", "st": "В работе", "res_actual": "", "files": "", "comments": ""}, {"id": 3061, "dir": "Таргетированная реклама", "name": "Прогрев профиля Игоря Лозюка", "desc": "", "res_plan": "", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3062, "dir": "Planfix", "name": "Улучшение пространства Прошивки + AMS", "desc": "Обеспечение бесперебойного поступления и корректной обработки лидов в CRM: контроль заполнения карточек, стадий, тегов и", "res_plan": "Обеспечили удобную работу с базой контактов. Проводить анализ и фильтрацию", "due": "2026-05-20 00:00:00", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "1000 - 2000$", "st": "В работе у интегратора", "res_actual": "", "files": "", "comments": ""}, {"id": 3063, "dir": "Planfix", "name": "Настройка отчета по задачам сотрудников отдела маркетинга", "desc": "Настроить корректную выгрузку отчета для Веры Юркевич по сотрудникам. Необходимо отслеживание задач по каждому сотрудник", "res_plan": "Создали настройку отчета по задачам сотрудников отдела маркетинга. На контроле выполнение задач и соблюдение дедлайна", "due": "2026-05-20 00:00:00", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "500 -1500$", "st": "В работе у интегратора", "res_actual": "", "files": "https://bixbit.planfix.com/?action=report&run=1&id=276562%20(https://bixbit.planfix.com/?action=report&run=1&id=276562)", "comments": ""}, {"id": 3064, "dir": "Planfix", "name": "Разработка и релиз воронки по направлению хард асиков и по серверному направлени", "desc": "Разработать отдельную воронку под хард и серверное направление.", "res_plan": "Разработали пространства для продуктов хард направление. Обеспечили удобство работы с коллегами, быстро отвечать на запр", "due": "2026-05-20 00:00:00", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В работе у интегратора", "res_actual": "", "files": "https://bixbit.planfix.com/?action=planner&id=719408&clb", "comments": ""}, {"id": 3065, "dir": "Planfix", "name": "Активная работа с лидами в Planfix", "desc": "Полный перевод работы с лидами в планфикс, создание регламента по работе с лидами в планфикс, внедрение автоматизации в ", "res_plan": "95–100% лидов попадают в Planfix с корректным источником/кампанией единые стадии MQL/SQL и правила дашборд: лиды → MQL →", "due": "2026-05-20 00:00:00", "agree": "", "budget": "Собственные ресурсы", "st": "В работе", "res_actual": "", "files": "", "comments": ""}, {"id": 3066, "dir": "Planfix", "name": "Интеграция планфикс с телегой", "desc": "Интеграция Planfix с Telegram для автоматизации уведомлений, обработки заявок и синхронизации задач между системой управ", "res_plan": "Ускорение коммуникации внутри команды, снижение потерь заявок и оперативное реагирование на задачи в реальном времени, п", "due": "2026-05-05 00:00:00", "agree": "", "budget": "100-500", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3067, "dir": "Сквозная аналитика", "name": "Подготовить план по улучшению аналитики для не технических коллег", "desc": "Подготовить решение совместно с тех отделом для настройки сквозной аналитики для отслеживания эффективности каждого плат", "res_plan": "Отслеживание лидов с каждой РК для анализа эффективности работы", "due": "2026-06-01 00:00:00", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "Собственные ресурсы", "st": "В ожидании", "res_actual": "", "files": "https://dzislandad-del.github.io/bixbit-dashboard/", "comments": ""}, {"id": 3068, "dir": "Сквозная аналитика", "name": "Подготовить новый формат отчета по кварталу и год", "desc": "Использовать инструменты для отчета ввиде дашборда ( с графиками, таблицами, сравнительная статистика с предыдущими пери", "res_plan": "Подготовить новый формат отчета в виде дашборда с графиками, цифрами и описанием выполненных задач. Получение конкретных", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "", "st": "В ожидании", "res_actual": "", "files": "https://dzislandad-del.github.io/bixbit-dashboard/", "comments": ""}, {"id": 3069, "dir": "Сквозная аналитика", "name": "Автоматическая аналитика по лидам с ПФ", "desc": "Настройка автоматической аналитики по лидам в Planfix с сбором, структурированием и визуализацией данных по источникам, ", "res_plan": "Прозрачная воронка лидов в реальном времени, ускорение принятия решений по каналам привлечения, повышение качества обраб", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3070, "dir": "Изучение и внедрение новых инструментов ", "name": "Запуск компаний в рекламных сетях. A-ADS", "desc": "Настроить и запустить рекламные кампании в сети A-ADS (также известна как «А-АДС» / Torad Network) — платформе контекстн", "res_plan": "Созданы и активны рекламные кампании с загруженными креативами (изображения, заголовки, описания). Установлены ставки и ", "due": "2026-05-05 00:00:00", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "900$ - 3 000$ тестовый период 3000$ - 6000$", "st": "Согласование", "res_actual": "", "files": "", "comments": ""}, {"id": 3071, "dir": "Изучение и внедрение новых инструментов ", "name": "Demandbase Выявление горячих аккаунтов", "desc": "Сбор и анализ intent‑сигналов по Tier‑1 аккаунтам, прогнозирование готовности к покупке", "res_plan": "Сосредоточение ресурсов на аккаунтах с высоким потенциалом сделки, сокращение цикла продажи", "due": "2026-05-10 00:00:00", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "$4 500 – $75 000", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3072, "dir": "Изучение и внедрение новых инструментов ", "name": "RollWorks Таргетинг и ретаргетинг", "desc": "Настройка account-based рекламы (LinkedIn, Display, YouTube) по спискам TAL", "res_plan": "Увеличение вовлечения нужных компаний, рост meetings с decision-makers", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "от $3 000", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3073, "dir": "Изучение и внедрение новых инструментов ", "name": "ZoomInfo Lead enrichment", "desc": "Обогащение данных аккаунтов и контактов, выявление новых целевых лиц внутри компании", "res_plan": "Более точные контакты, меньше потерь при холодном outreach", "due": "", "agree": "Вера Юркевич Чирков Дмитрий", "budget": "$3 750 – $10 000", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3074, "dir": "Инструменты для прогрева и возврата клие", "name": "email-/Lifecycle-маркетинг (Customer.io / HubSpot / Brevo)", "desc": "Настроить автоматические цепочки писем и рекламу для повторного вовлечения клиентов, которые уже проявляли интерес к про", "res_plan": "Рост повторных конверсий, возврат клиентов на сайт и увеличение LTV.", "due": "2026-06-01 00:00:00", "agree": "", "budget": "$9 000 - $30 000", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3075, "dir": "Инструменты для прогрева и возврата клие", "name": "Ретаргетинг", "desc": "Настроить ретаргетинг на всех посетителей сайта BiXBiT, которые не завершили регистрацию в AMS, не скачали прошивку или ", "res_plan": "Результат: Лиды: +50–70 лидов Зарегистрированные устройства в AMS: +30–40 устройств Прирост хешрейта (TH/s): +3 000–5 00", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3076, "dir": "Анализ конкурентов", "name": "Cистемы мониторинга конкурентов и прошивок", "desc": "Анализ платных систем мониторинга конкурентов и прошивок, которая отслеживает новые релизы, функциональные обновления, ц", "res_plan": "Получаем актуальную информацию о конкурентах и рынке прошивок, что позволяет быстрее принимать решения по развитию проду", "due": "2026-07-01 00:00:00", "agree": "", "budget": "Собственные ресурсы", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3077, "dir": "Анализ конкурентов", "name": "Составить список конкурентов по прошивкам и AMS", "desc": "Составление структурированного списка и анализа ключевых конкурентов в сегментах прошивок ASIC и AMS-систем с выделением", "res_plan": "Сформированная конкурентная карта рынка, позволяющая точнее позиционировать BiXBiT, выделить сильные и слабые стороны ко", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}, {"id": 3078, "dir": "Анализ конкурентов", "name": "Составить список всех сайтов калькуляторов и амл сервисов.", "desc": "Сбор и структурирование списка сайтов калькуляторов доходности майнинга и AMS/AML сервисов, используемых для мониторинга", "res_plan": "Сформированная база ключевых сервисов рынка с разделением по типам (калькуляторы и AMS/AML), которая позволит провести к", "due": "", "agree": "", "budget": "", "st": "В ожидании", "res_actual": "", "files": "", "comments": ""}];
+
+// ── STATUSES ──────────────────────────────────────────────────────────────
+const ST=[
+  {v:'Выполнено',c:'s-done'},{v:'В работе',c:'s-prog'},{v:'В ожидании',c:'s-wait'},
+  {v:'Перенесено',c:'s-moved'},{v:'Макет в дизайне',c:'s-des'},
+  {v:'В тех отделе',c:'s-des'},{v:'У интегратора',c:'s-des'},
+  {v:'В работе у интегратора',c:'s-des'},{v:'Согласование',c:'s-wait'},
+  {v:'Не выполнено',c:'s-no'},
+];
+function sCls(v){if(!v)return 's-des'; const f=ST.find(s=>v.includes(s.v)); return f?f.c:'s-des';}
+function buildOpts(cur){return ST.map(s=>'<option value="'+s.v+'"'+(s.v===cur?' selected':'')+'>'+s.v+'</option>').join('');}
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let nextId=5000;
+const periods={
+  'q1':{id:'q1',label:'Q1 2026 · Январь – Март',code:'Q1_2026 · JAN–MAR',tasks:RAW_Q1.map(t=>Object.assign({},t))},
+  'q2':{id:'q2',label:'Q2 2026 · Апрель – Июнь',code:'Q2_2026 · APR–JUN',tasks:RAW_Q2.map(t=>Object.assign({},t))},
+};
+let pid='q1', planDir='all', planQ='', repDir='all', repQ='';
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function autoH(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
+function parseDeadline(s){
+  if(!s) return null;
+  let m=s.match(/(\d{2})\.(\d{2})\.(\d{4})/); if(m) return new Date(+m[3],+m[2]-1,+m[1]);
+  m=s.match(/(\d{4})-(\d{2})-(\d{2})/); if(m) return new Date(+m[1],+m[2]-1,+m[3]);
+  return null;
+}
+
+// ── KPI ───────────────────────────────────────────────────────────────────
+function updateKPI(){
+  const tasks=periods[pid].tasks;
+  const total=tasks.length;
+  const done=tasks.filter(t=>t.st==='Выполнено').length;
+  const prog=tasks.filter(t=>t.st==='В работе'||t.st==='Макет в дизайне'||t.st==='В тех отделе'||t.st==='У интегратора'||t.st==='В работе у интегратора'||t.st==='Согласование').length;
+  const wait=tasks.filter(t=>t.st==='В ожидании').length;
+  const moved=tasks.filter(t=>t.st==='Перенесено'||t.st==='Не выполнено').length;
+  document.getElementById('kTotal').textContent=total;
+  document.getElementById('kDone').textContent=done;
+  document.getElementById('kDonePct').textContent=total?Math.round(done/total*100)+'% выполнено':'';
+  document.getElementById('kProg').textContent=prog;
+  document.getElementById('kWait').textContent='ожидание: '+wait;
+  document.getElementById('kMoved').textContent=moved;
+  document.getElementById('hdrPeriod').textContent=periods[pid].code;
+  // overdue
+  const now=new Date(); now.setHours(0,0,0,0);
+  let over=0;
+  tasks.forEach(t=>{const d=parseDeadline(t.due);t._late=d&&d<now&&t.st!=='Выполнено'&&t.st!=='Перенесено';if(t._late)over++;});
+  const ob=document.getElementById('kOverdueKpi'), mb=document.getElementById('kMovedKpi');
+  if(over>0){ob.style.display='';mb.style.display='none';document.getElementById('kOverdue').textContent=over;}
+  else{ob.style.display='none';mb.style.display='';}
+}
+
+// ── PERIOD BUTTONS ─────────────────────────────────────────────────────────
+function renderPeriodBtns(){
+  ['perBtns','repPerBtns'].forEach(id=>{
+    const c=document.getElementById(id); c.innerHTML='';
+    Object.values(periods).forEach(p=>{
+      const b=document.createElement('button');
+      b.className='per-btn'+(p.id===pid?' on':'');
+      b.textContent=p.label;
+      b.onclick=function(){pid=p.id; planDir='all'; repDir='all'; renderAll();};
+      c.appendChild(b);
+    });
+  });
+  document.getElementById('planPeriodName').textContent=periods[pid].label;
+  document.getElementById('repPeriodName').textContent=periods[pid].label;
+}
+
+// ── DIR BUTTONS ────────────────────────────────────────────────────────────
+function renderDirBtns(containerId, activeDir, onClick){
+  const tasks=periods[pid].tasks;
+  const dirs=['all',...new Set(tasks.map(t=>t.dir))];
+  const wrap=document.getElementById(containerId); wrap.innerHTML='';
+  dirs.forEach(d=>{
+    const b=document.createElement('button');
+    b.className='dbtn'+(d===activeDir?' on':'');
+    b.textContent=d==='all'?'Все':d;
+    b.onclick=function(){onClick(d);};
+    wrap.appendChild(b);
+  });
+  const cnt=document.createElement('span'); cnt.className='task-cnt'; cnt.id=containerId+'Cnt';
+  wrap.appendChild(cnt);
+}
+
+// ── PLAN TABLE ─────────────────────────────────────────────────────────────
+function planRows(){
+  return periods[pid].tasks.filter(t=>{
+    if(planDir!=='all'&&t.dir!==planDir) return false;
+    if(!planQ) return true;
+    const q=planQ.toLowerCase();
+    return (t.name+t.desc+t.dir).toLowerCase().includes(q);
+  });
+}
+
+function planRowHTML(t){
+  const sc=sCls(t.st);
+  const fl=t.files||'';
+  const dirs=[...new Set(periods[pid].tasks.map(x=>x.dir))];
+  const dirOpts=dirs.map(d=>'<option value="'+esc(d)+'"'+(d===t.dir?' selected':'')+'>'+esc(d)+'</option>').join('');
+  const fileCell=fl
+    ?'<div class="fl"><a href="'+esc(fl)+'" target="_blank">Файл ↗</a></div><input class="fi" data-f="files" value="'+esc(fl)+'" placeholder="ссылка...">'
+    :'<input class="fi" data-f="files" value="" placeholder="вставить ссылку...">';
+  return '<tr class="dr'+(t._late?' overdue':'')+'" data-id="'+t.id+'">'
+    +'<td><button class="del" title="Удалить">✕</button>'
+    +'<textarea class="ce-name" data-f="name" rows="1" placeholder="Новая задача...">'+esc(t.name)+'</textarea>'
+    +'<select class="dir-sel" style="font-size:10px;margin-top:3px;padding:2px 5px;border:1px solid #E6E6E6;border-radius:4px;background:#fff;width:100%;outline:none;cursor:pointer">'+dirOpts+'</select>'
+    +'</td>'
+    +'<td><textarea class="ce" data-f="desc" rows="2" placeholder="Описание...">'+esc(t.desc)+'</textarea></td>'
+    +'<td><textarea class="ce" data-f="res_plan" rows="2" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea></td>'
+    +'<td><select class="sst '+sc+'" data-f="st">'+buildOpts(t.st)+'</select></td>'
+    +'<td><input class="ce" type="text" data-f="agree" value="'+esc(t.agree)+'" placeholder="Согласование..."></td>'
+    +'<td><input class="ce" type="text" data-f="budget" value="'+esc(t.budget)+'" placeholder="Бюджет..."></td>'
+    +'<td>'+fileCell+'</td>'
+    +'<td><textarea class="ce" data-f="comments" rows="2" placeholder="Комментарии...">'+esc(t.comments)+'</textarea></td>'
+    +'<td></td>'
+    +'</tr>';
+}
+
+function bindPlanRow(tr){
+  const id=+tr.dataset.id;
+  const task=function(){return periods[pid].tasks.find(function(t){return t.id===id;});};
+  tr.querySelectorAll('textarea.ce,textarea.ce-name').forEach(function(el){
+    autoH(el);
+    el.addEventListener('input',function(){var t=task();if(t)t[this.dataset.f]=this.value;autoH(this);updateKPI();syncRepRow(id);debounceSave(id,pid);});
+  });
+  tr.querySelectorAll('input.ce,input.fi').forEach(function(el){
+    el.addEventListener('input',function(){var t=task();if(t)t[this.dataset.f]=this.value;syncRepRow(id);debounceSave(id,pid);});
+  });
+  tr.querySelectorAll('select.sst').forEach(function(sel){
+    ST.forEach(function(s){sel.classList.remove(s.c);}); sel.classList.add(sCls(sel.value));
+    sel.addEventListener('change',function(){
+      var t=task();if(t)t.st=this.value;
+      ST.forEach(function(s){this.classList.remove(s.c);}.bind(this)); this.classList.add(sCls(this.value));
+      updateKPI(); syncRepRow(id); renderRepStats(); debounceSave(id,pid);
+    });
+  });
+  tr.querySelector('select.dir-sel').addEventListener('change',function(){
+    var t=task();if(t)t.dir=this.value;renderPlanTable();renderRepTable();
+  });
+  tr.querySelector('.del').addEventListener('click',function(){
+    var idx=periods[pid].tasks.findIndex(function(t){return t.id===id;});
+    if(idx>-1){periods[pid].tasks.splice(idx,1);dbDeleteTask(id);renderAll();}
+  });
+  // click to open detail (not on inputs)
+  tr.querySelector('td:first-child').style.cursor='pointer';
+  tr.querySelector('td:first-child').addEventListener('click',function(e){
+    if(e.target.tagName==='BUTTON'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT'||e.target.tagName==='INPUT') return;
+    openDetail(id);
+  });
+}
+
+function renderPlanTable(){
+  const rows=planRows();
+  const cnt=document.getElementById('planDirBtnsCnt');
+  if(cnt) cnt.textContent=rows.length+' задач';
+  const grp={};
+  rows.forEach(function(t){if(!grp[t.dir])grp[t.dir]=[];grp[t.dir].push(t);});
+  let h='';
+  Object.keys(grp).forEach(function(d){
+    h+='<tr class="sec-row"><td colspan="9">'+esc(d.toUpperCase())+' · '+grp[d].length+'</td></tr>';
+    grp[d].forEach(function(t){h+=planRowHTML(t);});
+  });
+  if(!h) h='<tr><td colspan="9" style="text-align:center;padding:2rem;color:#C0BDC0;font-size:13px">Задачи не найдены</td></tr>';
+  const tb=document.getElementById('planBody');
+  tb.innerHTML=h;
+  tb.querySelectorAll('tr.dr').forEach(function(tr){bindPlanRow(tr);});
+}
+
+// ── REPORT TABLE ──────────────────────────────────────────────────────────
+function repRows(){
+  return periods[pid].tasks.filter(function(t){
+    if(repDir!=='all'&&t.dir!==repDir) return false;
+    if(!repQ) return true;
+    return (t.name+t.dir).toLowerCase().includes(repQ.toLowerCase());
+  });
+}
+
+function repRowHTML(t){
+  const sc=sCls(t.st);
+  const fl=t.files||'';
+  const fileCell=fl?'<div class="fl"><a href="'+esc(fl)+'" target="_blank">Файл ↗</a></div><input class="fi" data-f="files" value="'+esc(fl)+'" placeholder="ссылка...">':'<input class="fi" data-f="files" value="" placeholder="ссылка...">';
+  return '<tr class="dr'+(t._late?' overdue':'')+'" data-id="'+t.id+'">'
+    +'<td style="font-weight:600;font-size:12px">'+esc(t.name)+'<br><span style="font-size:10px;color:#9F9B9D;font-weight:400">'+esc(t.dir)+'</span></td>'
+    +'<td style="font-size:11px;color:#4A4A4A">'+esc(t.res_plan)+'</td>'
+    +'<td><textarea class="ce" data-f="res_actual" rows="2" placeholder="Фактический результат...">'+esc(t.res_actual)+'</textarea></td>'
+    +'<td><textarea class="ce" data-f="comments" rows="2" placeholder="Сложности, блокеры...">'+esc(t.comments)+'</textarea></td>'
+    +'<td><select class="sst '+sc+'" data-f="st">'+buildOpts(t.st)+'</select></td>'
+    +'<td>'+fileCell+'</td>'
+    +'<td style="font-size:11px;color:#4A4A4A">'+esc(t.agree)+'</td>'
+    +'</tr>';
+}
+
+function bindRepRow(tr){
+  const id=+tr.dataset.id;
+  const task=function(){return periods[pid].tasks.find(function(t){return t.id===id;});};
+  tr.querySelectorAll('textarea.ce').forEach(function(el){
+    autoH(el);
+    el.addEventListener('input',function(){var t=task();if(t)t[this.dataset.f]=this.value;autoH(this);debounceSave(id,pid);});
+  });
+  tr.querySelectorAll('input.fi').forEach(function(el){
+    el.addEventListener('input',function(){var t=task();if(t)t[this.dataset.f]=this.value;debounceSave(id,pid);});
+  });
+  tr.querySelectorAll('select.sst').forEach(function(sel){
+    ST.forEach(function(s){sel.classList.remove(s.c);}); sel.classList.add(sCls(sel.value));
+    sel.addEventListener('change',function(){
+      var t=task();if(t)t.st=this.value;
+      ST.forEach(function(s){this.classList.remove(s.c);}.bind(this)); this.classList.add(sCls(this.value));
+      updateKPI(); syncPlanRow(id); renderRepStats(); debounceSave(id,pid);
+    });
+  });
+}
+
+function renderRepTable(){
+  const rows=repRows();
+  const cnt=document.getElementById('repDirBtnsCnt');
+  if(cnt) cnt.textContent=rows.length+' задач';
+  const grp={};
+  rows.forEach(function(t){if(!grp[t.dir])grp[t.dir]=[];grp[t.dir].push(t);});
+  let h='';
+  Object.keys(grp).forEach(function(d){
+    h+='<tr class="sec-row"><td colspan="7">'+esc(d.toUpperCase())+' · '+grp[d].length+'</td></tr>';
+    grp[d].forEach(function(t){h+=repRowHTML(t);});
+  });
+  if(!h) h='<tr><td colspan="7" style="text-align:center;padding:2rem;color:#C0BDC0;font-size:13px">Задачи не найдены</td></tr>';
+  const tb=document.getElementById('repBody');
+  tb.innerHTML=h;
+  tb.querySelectorAll('tr.dr').forEach(function(tr){bindRepRow(tr);});
+}
+
+// Sync a single row between plan ↔ report without full re-render
+function syncRepRow(id){
+  const t=periods[pid].tasks.find(function(x){return x.id===id;});
+  if(!t) return;
+  const tr=document.querySelector('#repBody tr[data-id="'+id+'"]');
+  if(!tr) return;
+  const sel=tr.querySelector('select.sst');
+  if(sel){sel.value=t.st;ST.forEach(function(s){sel.classList.remove(s.c);});sel.classList.add(sCls(t.st));}
+  const cells=tr.querySelectorAll('td');
+  if(cells[1]) cells[1].textContent=t.res_plan||'';
+}
+function syncPlanRow(id){
+  const t=periods[pid].tasks.find(function(x){return x.id===id;});
+  if(!t) return;
+  const tr=document.querySelector('#planBody tr[data-id="'+id+'"]');
+  if(!tr) return;
+  const sel=tr.querySelector('select.sst');
+  if(sel){sel.value=t.st;ST.forEach(function(s){sel.classList.remove(s.c);});sel.classList.add(sCls(t.st));}
+}
+
+// ── REPORT STATS ──────────────────────────────────────────────────────────
+function renderRepStats(){
+  const tasks=periods[pid].tasks;
+  const dirs=[...new Set(tasks.map(function(t){return t.dir;}))];
+  const total=tasks.length;
+  const done=tasks.filter(function(t){return t.st==='Выполнено';}).length;
+  const prog=tasks.filter(function(t){return t.st==='В работе'||t.st==='Макет в дизайне'||t.st==='В тех отделе'||t.st==='У интегратора'||t.st==='В работе у интегратора'||t.st==='Согласование';}).length;
+  const wait=tasks.filter(function(t){return t.st==='В ожидании';}).length;
+  const moved=tasks.filter(function(t){return t.st==='Перенесено'||t.st==='Не выполнено';}).length;
+  const other=total-done-prog-wait-moved;
+
+  const bars=dirs.map(function(d){
+    const dt=tasks.filter(function(t){return t.dir===d;});
+    const dc=dt.filter(function(t){return t.st==='Выполнено';}).length;
+    const pct=dt.length?Math.round(dc/dt.length*100):0;
+    const col=pct>=80?'#0040DD':pct>=50?'#D9017A':'#9F9B9D';
+    return '<div class="prog-row"><span class="prog-lbl" title="'+esc(d)+'">'+esc(d)+'</span>'
+      +'<div class="prog-bg"><div class="prog-fill" style="width:'+pct+'%;background:'+col+'"></div></div>'
+      +'<span class="prog-pct" style="color:'+col+'">'+pct+'%</span></div>';
+  }).join('');
+
+  const dotData=[
+    {lbl:'Выполнено',n:done,bg:'#e6f7f0',col:'#0a6640'},
+    {lbl:'В работе',n:prog,bg:'#e6eeff',col:'#0040DD'},
+    {lbl:'В ожидании',n:wait,bg:'#fff8e6',col:'#8a5700'},
+    {lbl:'Перенесено',n:moved,bg:'#f3e8ff',col:'#6b21a8'},
+    {lbl:'Прочее',n:other,bg:'#F4F4F4',col:'#4A4A4A'},
+  ].filter(function(d){return d.n>0;}).map(function(d){
+    return '<div class="sdot" style="background:'+d.bg+';color:'+d.col+'">'
+      +'<span class="sdot-num">'+d.n+'</span> '+d.lbl+'</div>';
+  }).join('');
+
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('repStats').innerHTML=
+    '<div class="rep-card"><div class="rep-card-title">Выполнение по направлениям</div>'+bars+'</div>'
+    +'<div class="rep-card"><div class="rep-card-title">Статусы</div>'
+    +'<div class="stat-dots">'+dotData+'</div>'
+    +'<div style="margin-top:14px;padding-top:12px;border-top:1px solid #E6E6E6">'
+    +'<div style="font-size:11px;color:#4A4A4A;margin-bottom:6px">Общий прогресс</div>'
+    +'<div style="height:9px;background:#E6E6E6;border-radius:5px;overflow:hidden">'
+    +'<div style="height:100%;width:'+pct+'%;background:#0040DD;border-radius:5px;transition:width .4s"></div></div>'
+    +'<div style="font-family:Fira Code,monospace;font-size:12px;font-weight:500;color:#0040DD;margin-top:4px">'+done+' / '+total+' ('+pct+'%)</div>'
+    +'</div></div>';
+}
+
+// ── CSV EXPORT ─────────────────────────────────────────────────────────────
+function exportCSV(isRep){
+  const tasks=periods[pid].tasks;
+  const head=isRep
+    ?['Направление','Задача','Плановый результат','Фактический результат','Статус','Файлы','Комментарии','Согласование']
+    :['Направление','Задача','Описание','Плановый результат','Статус','Согласование','Бюджет','Файлы','Комментарии'];
+  const rows=tasks.map(function(t){return isRep
+    ?[t.dir,t.name,t.res_plan,t.res_actual,t.st,t.files,t.comments,t.agree]
+    :[t.dir,t.name,t.desc,t.res_plan,t.st,t.agree,t.budget,t.files,t.comments];});
+  const csv=[head].concat(rows).map(function(r){return r.map(function(v){return '"'+(v||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download='bixbit_'+(isRep?'report':'plan')+'_'+pid+'.csv'; a.click();
+}
+
+// ── DETAIL PANEL ──────────────────────────────────────────────────────────
+let detailId=null;
+function openDetail(id){
+  const t=periods[pid].tasks.find(function(x){return x.id===id;});
+  if(!t) return; detailId=id;
+  document.getElementById('dpName').textContent=t.name;
+  document.getElementById('dpDir').textContent=t.dir;
+  document.getElementById('dpDesc').textContent=t.desc||'—';
+  document.getElementById('dpResPlan').textContent=t.res_plan||'—';
+  const ra=document.getElementById('dpResActual');
+  ra.textContent=t.res_actual||'—'; ra.style.fontStyle=t.res_actual?'normal':'italic';
+  document.getElementById('dpAgree').textContent=t.agree||'—';
+  document.getElementById('dpBudget').textContent=t.budget||'—';
+  document.getElementById('dpDue').textContent=t.due||'—';
+  const fv=document.getElementById('dpFiles');
+  fv.innerHTML=t.files?'<a href="'+esc(t.files)+'" target="_blank" style="color:#0040DD">'+esc(t.files.slice(0,60))+(t.files.length>60?'…':'')+' ↗</a>':'—';
+  const cm=document.getElementById('dpComments');
+  cm.textContent=t.comments||'—'; cm.style.fontStyle=t.comments?'normal':'italic';
+  const sw=document.getElementById('dpStWrap');
+  sw.innerHTML='<select class="sst '+sCls(t.st)+'" id="dpSt">'+buildOpts(t.st)+'</select>';
+  document.getElementById('dpSt').addEventListener('change',function(){
+    const task=periods[pid].tasks.find(function(x){return x.id===detailId;});
+    if(task) task.st=this.value;
+    ST.forEach(function(s){this.classList.remove(s.c);}.bind(this)); this.classList.add(sCls(this.value));
+    updateKPI(); syncPlanRow(detailId); syncRepRow(detailId); renderRepStats(); debounceSave(detailId,pid);
+  });
+  document.getElementById('detailOverlay').classList.add('open');
+  document.getElementById('detailPanel').classList.add('open');
+}
+function closeDetail(){
+  document.getElementById('detailOverlay').classList.remove('open');
+  document.getElementById('detailPanel').classList.remove('open');
+}
+document.getElementById('dpClose').addEventListener('click',closeDetail);
+document.getElementById('detailOverlay').addEventListener('click',closeDetail);
+
+// ── AI REPORT ─────────────────────────────────────────────────────────────
+document.getElementById('aiBtn').addEventListener('click',async function(){
+  const tasks=periods[pid].tasks;
+  document.getElementById('aiPeriodLbl').textContent=periods[pid].label;
+  document.getElementById('aiBody').innerHTML='<span class="ai-spinner"></span>Анализирую задачи периода...';
+  document.getElementById('aiModal').classList.add('open');
+  this.disabled=true;
+  const now=new Date(); now.setHours(0,0,0,0);
+  tasks.forEach(function(t){const d=parseDeadline(t.due);t._late=d&&d<now&&t.st!=='Выполнено'&&t.st!=='Перенесено';});
+  const done=tasks.filter(function(t){return t.st==='Выполнено';});
+  const prog=tasks.filter(function(t){return t.st!=='Выполнено'&&t.st!=='Перенесено'&&t.st!=='Не выполнено'&&t.st!=='В ожидании';});
+  const moved=tasks.filter(function(t){return t.st==='Перенесено'||t.st==='Не выполнено';});
+  const late=tasks.filter(function(t){return t._late;});
+  const total=tasks.length;
+  const summary='Период: '+periods[pid].label+'\nВсего задач: '+total
+    +'\nВыполнено: '+done.length+' ('+Math.round(done.length/total*100)+'%)'
+    +'\nВ работе/частично: '+prog.length+'\nВ ожидании: '+tasks.filter(function(t){return t.st==='В ожидании';}).length
+    +'\nПеренесено/не выполнено: '+moved.length+'\nПросрочено: '+late.length
+    +'\n\nВЫПОЛНЕНО:\n'+done.map(function(t){return '- ['+t.dir+'] '+t.name+(t.res_actual?' → '+t.res_actual.slice(0,70):'');}).join('\n')
+    +'\n\nВ РАБОТЕ:\n'+prog.map(function(t){return '- ['+t.dir+'] '+t.name+' ('+t.st+')';}).join('\n')
+    +'\n\nПЕРЕНЕСЕНО:\n'+moved.map(function(t){return '- ['+t.dir+'] '+t.name+(t.res_actual?' → '+t.res_actual.slice(0,60):'');}).join('\n')
+    +(late.length?'\n\nПРОСРОЧЕНО:\n'+late.map(function(t){return '- ['+t.dir+'] '+t.name+' ('+t.due+')';}).join('\n'):'');
+  const prompt='Ты опытный маркетинг-аналитик компании BiXBiT (ASIC firmware, AMS платформа, майнинг).\nСоздай структурированный executive summary для руководителя Веры Юркевич на основе данных трекера.\n\n'+summary+'\n\nФОРМАТ ОТЧЁТА:\n1. Краткое резюме (2-3 предложения)\n2. ✅ Ключевые достижения по направлениям\n3. ⚠️ В работе и блокеры\n4. ❌ Перенесено — причины и влияние\n5. 🔴 Просроченные (если есть)\n6. 📌 Топ-5 приоритетов на следующий квартал\n\nПиши по-русски, деловым языком, конкретно, 400-600 слов.';
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();
+    const text=data.content&&data.content[0]?data.content[0].text:'Ошибка: пустой ответ';
+    document.getElementById('aiBody').textContent=text;
+  }catch(e){
+    document.getElementById('aiBody').textContent='Ошибка подключения к AI: '+e.message;
+  }
+  this.disabled=false;
+});
+document.getElementById('aiClose').addEventListener('click',function(){document.getElementById('aiModal').classList.remove('open');});
+document.getElementById('aiCloseBtn').addEventListener('click',function(){document.getElementById('aiModal').classList.remove('open');});
+document.getElementById('aiCopy').addEventListener('click',function(){
+  navigator.clipboard.writeText(document.getElementById('aiBody').textContent).then(function(){
+    document.getElementById('aiCopy').textContent='Скопировано ✓';
+    setTimeout(function(){document.getElementById('aiCopy').textContent='Скопировать';},2000);
+  });
+});
+
+// ── NEW PERIOD ─────────────────────────────────────────────────────────────
+document.getElementById('newPerBtn').addEventListener('click',function(){document.getElementById('newPerModal').classList.add('open');});
+document.getElementById('mCancel').addEventListener('click',function(){document.getElementById('newPerModal').classList.remove('open');});
+document.getElementById('mOk').addEventListener('click',function(){
+  const name=document.getElementById('mName').value.trim();
+  const code=document.getElementById('mCode').value.trim();
+  const base=document.getElementById('mBase').value;
+  if(!name){alert('Введите название');return;}
+  const newId='per'+Date.now();
+  let newTasks=[];
+  if(base==='copy'){
+    newTasks=periods[pid].tasks.filter(function(t){return t.st!=='Выполнено';}).map(function(t){
+      return Object.assign({},t,{id:nextId++,res_actual:'',st:t.st==='Перенесено'?'В ожидании':t.st});
+    });
+  }
+  periods[newId]={id:newId,label:name,code:code||name,tasks:newTasks};
+  dbSavePeriod(periods[newId]);
+  newTasks.forEach(function(t){dbSaveTask(t,newId);});
+  pid=newId;
+  document.getElementById('newPerModal').classList.remove('open');
+  document.getElementById('mName').value='';
+  document.getElementById('mCode').value='';
+  renderAll();
+});
+
+// ── ADD TASK ───────────────────────────────────────────────────────────────
+document.getElementById('addBtn').addEventListener('click',function(){
+  const dir=planDir==='all'?(periods[pid].tasks[0]?periods[pid].tasks[0].dir:'Сайт'):planDir;
+  const newTask={id:nextId++,dir:dir,name:'',desc:'',res_plan:'',due:'',agree:'',budget:'',st:'В ожидании',res_actual:'',files:'',comments:''};
+  periods[pid].tasks.push(newTask);
+  dbSaveTask(newTask,pid);
+  planDir=dir; renderAll();
+  setTimeout(function(){
+    const rows=document.querySelectorAll('#planBody tr.dr');
+    if(rows.length) rows[rows.length-1].querySelector('.ce-name').focus();
+  },50);
+});
+
+// ── TABS & SEARCH ──────────────────────────────────────────────────────────
+document.querySelectorAll('.main-tab').forEach(function(tab){
+  tab.addEventListener('click',function(){
+    document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('on');});
+    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('on');});
+    this.classList.add('on');
+    document.getElementById('panel-'+this.dataset.tab).classList.add('on');
+  });
+});
+document.getElementById('planSearch').addEventListener('input',function(){planQ=this.value;renderPlanTable();});
+document.getElementById('repSearch').addEventListener('input',function(){repQ=this.value;renderRepTable();});
+document.getElementById('exportPlan').addEventListener('click',function(){exportCSV(false);});
+document.getElementById('exportRep').addEventListener('click',function(){exportCSV(true);});
+
+// ── DARK THEME ─────────────────────────────────────────────────────────────
+document.getElementById('themeBtn').addEventListener('click',function(){
+  document.body.classList.toggle('dark');
+  this.textContent=document.body.classList.contains('dark')?'☀ Светлая':'🌙 Тёмная';
+});
+
+// ── RENDER ALL ─────────────────────────────────────────────────────────────
+function renderAll(){
+  updateKPI();
+  renderPeriodBtns();
+  renderDirBtns('planDirBtns',planDir,function(d){planDir=d;renderPlanTable();renderDirBtns('planDirBtns',planDir,arguments.callee);});
+  renderDirBtns('repDirBtns',repDir,function(d){repDir=d;renderRepTable();renderDirBtns('repDirBtns',repDir,arguments.callee);});
+  renderPlanTable();
+  renderRepTable();
+  renderRepStats();
+}
+
+initFromDB();
+</script>
+</body>
+</html>
