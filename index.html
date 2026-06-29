@@ -897,7 +897,7 @@ function planRowHTML(t){
     +'<td><span class="drag-handle" title="Перетащить строку">⠿</span><button class="del" title="Удалить">✕</button>'
     +'<textarea class="ce-name" data-f="name" rows="1" placeholder="Новая задача...">'+esc(t.name)+'</textarea>'
     +(isPrimary?'<span class="merge-badge" data-merge-id="'+t.id+'" title="Нажми чтобы разъединить">⊞ '+mergedCount+' строки объединены ✕</span>':'')
-    +'<select class="dir-sel"' style="font-size:10px;margin-top:3px;padding:2px 5px;border:1px solid #E6E6E6;border-radius:4px;background:#fff;width:100%;outline:none;cursor:pointer">'+dirOpts+'</select>'
+    +'<select class="dir-sel" style="font-size:10px;margin-top:3px;padding:2px 5px;border:1px solid #E6E6E6;border-radius:4px;background:#fff;width:100%;outline:none;cursor:pointer">'+dirOpts+'</select>'
     +'</td>'
     +'<td><textarea class="ce" data-f="desc" rows="2" placeholder="Описание...">'+esc(t.desc)+'</textarea></td>'
     +'<td><textarea class="ce" data-f="res_plan" rows="2" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea></td>'
