@@ -176,7 +176,7 @@ tr.dr:nth-child(odd) td{background:#fff}
 tr.dr:hover td{background:#EEF3FF!important}
 tr.dr td{border-bottom:1px solid #F0F0F2;vertical-align:top;padding:6px 8px}
 tr.dr:last-child td{border-bottom:none}
-.ce{font-size:11px;color:#000;background:transparent;border:1px solid transparent;outline:none;width:100%;padding:3px 5px;border-radius:4px;font-family:inherit;resize:none;overflow:hidden;min-height:22px;line-height:1.5}
+.ce{font-size:11px;color:#000;background:transparent;border:1px solid transparent;outline:none;width:100%;padding:3px 5px;border-radius:4px;font-family:inherit;resize:none;overflow:hidden;min-height:22px;line-height:1.6;field-sizing:content}
 .ce:hover{border-color:var(--gray100);background:#fff}
 .ce:focus{background:#EEF3FF;border-color:#b3c8ff;box-shadow:0 0 0 2px rgba(0,64,221,.06)}
 .ce::placeholder{color:#D0CDD0}
@@ -576,6 +576,7 @@ async function initFromDB() {
       pid = Object.keys(periods)[0];
       hideLoader();
       renderAll();
+      setTimeout(function(){ autoHAll(document); }, 400);
     } else {
       // First run — seed DB with Q1+Q2 data
       await seedDB();
@@ -696,7 +697,12 @@ function autoH(el){
   if(!el) return;
   el.style.height='auto';
   var sh=el.scrollHeight;
-  el.style.height=(sh>0?sh:parseInt(getComputedStyle(el).minHeight||22))+'px';
+  if(sh>0) el.style.height=sh+'px';
+}
+
+function autoHAll(container){
+  var els=(container||document).querySelectorAll('textarea.ce, textarea.ce-name');
+  els.forEach(function(el){ autoH(el); });
 }
 function shortUrl(url){
   try{
@@ -1048,12 +1054,9 @@ function renderPlanTable(){
   tb.querySelectorAll('tr.dr').forEach(function(tr){bindPlanRow(tr);});
   initRowDrag();
   updateBulkBar();
-  // Re-run autoH after layout
-  requestAnimationFrame(function(){
-    requestAnimationFrame(function(){
-      tb.querySelectorAll('textarea.ce, textarea.ce-name').forEach(function(el){ autoH(el); });
-    });
-  });
+  // Multiple timing attempts
+  requestAnimationFrame(function(){ autoHAll(tb); });
+  setTimeout(function(){ autoHAll(tb); }, 50);
 }
 
 // ── REPORT TABLE ──────────────────────────────────────────────────────────
@@ -1074,9 +1077,9 @@ function repRowHTML(t){
     +'</div>';
   return '<tr class="dr'+(t._late?' overdue':'')+'" data-id="'+t.id+'">'
     +'<td style="font-weight:600;font-size:12px">'+esc(t.name)+'<br><span style="font-size:10px;color:#9F9B9D;font-weight:400">'+esc(t.dir)+'</span></td>'
-    +'<td><textarea class="ce" data-f="res_plan" rows="2" placeholder="Плановый результат..." style="font-size:11px">'+esc(t.res_plan)+'</textarea></td>'
-    +'<td><textarea class="ce" data-f="res_actual" rows="2" placeholder="Фактический результат...">'+esc(t.res_actual)+'</textarea></td>'
-    +'<td><textarea class="ce" data-f="comments" rows="2" placeholder="Сложности, блокеры...">'+esc(t.comments)+'</textarea></td>'
+    +'<td><textarea class="ce" data-f="res_plan" rows="1" placeholder="Плановый результат..." style="font-size:11px">'+esc(t.res_plan)+'</textarea></td>'
+    +'<td><textarea class="ce" data-f="res_actual" rows="1" placeholder="Фактический результат...">'+esc(t.res_actual)+'</textarea></td>'
+    +'<td><textarea class="ce" data-f="comments" rows="1" placeholder="Сложности, блокеры...">'+esc(t.comments)+'</textarea></td>'
     +'<td><select class="sst '+sc+'" data-f="st">'+buildOpts(t.st)+'</select></td>'
     +'<td>'+fileCell+'</td>'
     +'<td style="font-size:11px;color:#4A4A4A">'+esc(t.agree)+'</td>'
@@ -1164,12 +1167,10 @@ function renderRepTable(){
   const tb=document.getElementById('repBody');
   tb.innerHTML=h;
   tb.querySelectorAll('tr.dr').forEach(function(tr){bindRepRow(tr);});
-  // Defer autoH until after browser layout — fixes truncated textareas on load
-  requestAnimationFrame(function(){
-    requestAnimationFrame(function(){
-      tb.querySelectorAll('textarea.ce').forEach(function(el){ autoH(el); });
-    });
-  });
+  // Multiple timing attempts to ensure correct heights
+  requestAnimationFrame(function(){ autoHAll(tb); });
+  setTimeout(function(){ autoHAll(tb); }, 50);
+  setTimeout(function(){ autoHAll(tb); }, 200);
 }
 
 // Sync a single row between plan ↔ report without full re-render
@@ -1378,10 +1379,9 @@ document.querySelectorAll('.main-tab').forEach(function(tab){
     this.classList.add('on');
     var panel=document.getElementById('panel-'+this.dataset.tab);
     panel.classList.add('on');
-    // Re-run autoH when switching to report tab — elements were hidden before
-    requestAnimationFrame(function(){
-      panel.querySelectorAll('textarea.ce, textarea.ce-name').forEach(function(el){ autoH(el); });
-    });
+    // Re-run autoH when switching tabs — elements were hidden before
+    setTimeout(function(){ autoHAll(panel); }, 20);
+    setTimeout(function(){ autoHAll(panel); }, 150);
   });
 });
 document.getElementById('planSearch').addEventListener('input',function(){planQ=this.value;renderPlanTable();});
@@ -1390,6 +1390,12 @@ document.getElementById('exportPlan').addEventListener('click',function(){export
 document.getElementById('exportRep').addEventListener('click',function(){exportCSV(true);});
 
 // ── DARK THEME ─────────────────────────────────────────────────────────────
+// Re-measure textarea heights on window resize
+window.addEventListener('resize', function(){
+  clearTimeout(window._resizeTimer);
+  window._resizeTimer = setTimeout(function(){ autoHAll(document); }, 100);
+});
+
 document.getElementById('themeBtn').addEventListener('click',function(){
   document.body.classList.toggle('dark');
   this.textContent=document.body.classList.contains('dark')?'☀ Светлая':'🌙 Тёмная';
