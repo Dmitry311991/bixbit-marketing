@@ -407,7 +407,7 @@ body.dark .col-add-inp{background:var(--dk-input-bg);border-color:var(--dk-borde
     </div>
     <div class="dir-btns" id="repDirBtns"></div>
   </div>
-  <p class="rep-tbl-note">Статус, описание и плановый результат синхронизируются из плана. Фактический результат, файлы и комментарии — только здесь.</p>
+  <p class="rep-tbl-note">Статус синхронизируется с планом. Плановый результат — редактируется здесь и в плане одновременно. Фактический результат, файлы и комментарии — только в отчёте.</p>
   <div class="tbl-wrap">
     <table>
       <colgroup><col class="cn"><col style="width:13%"><col style="width:14%"><col style="width:14%"><col style="width:10%"><col style="width:11%"><col style="width:12%"></colgroup>
@@ -1063,7 +1063,7 @@ function repRowHTML(t){
     +'</div>';
   return '<tr class="dr'+(t._late?' overdue':'')+'" data-id="'+t.id+'">'
     +'<td style="font-weight:600;font-size:12px">'+esc(t.name)+'<br><span style="font-size:10px;color:#9F9B9D;font-weight:400">'+esc(t.dir)+'</span></td>'
-    +'<td style="font-size:11px;color:#4A4A4A">'+esc(t.res_plan)+'</td>'
+    +'<td><textarea class="ce" data-f="res_plan" rows="2" placeholder="Плановый результат..." style="font-size:11px">'+esc(t.res_plan)+'</textarea></td>'
     +'<td><textarea class="ce" data-f="res_actual" rows="2" placeholder="Фактический результат...">'+esc(t.res_actual)+'</textarea></td>'
     +'<td><textarea class="ce" data-f="comments" rows="2" placeholder="Сложности, блокеры...">'+esc(t.comments)+'</textarea></td>'
     +'<td><select class="sst '+sc+'" data-f="st">'+buildOpts(t.st)+'</select></td>'
@@ -1077,7 +1077,16 @@ function bindRepRow(tr){
   const task=function(){return periods[pid].tasks.find(function(t){return t.id===id;});};
   tr.querySelectorAll('textarea.ce').forEach(function(el){
     autoH(el);
-    el.addEventListener('input',function(){var t=task();if(t)t[this.dataset.f]=this.value;autoH(this);debounceSave(id,pid);});
+    el.addEventListener('input',function(){
+      var t=task();
+      if(t){
+        t[this.dataset.f]=this.value;
+        // if res_plan changed - sync to plan row too
+        if(this.dataset.f==='res_plan') syncPlanRow(id);
+      }
+      autoH(this);
+      debounceSave(id,pid);
+    });
   });
   tr.querySelectorAll('input.fi').forEach(function(el){
     el.addEventListener('input',function(){var t=task();if(t)t[this.dataset.f]=this.value;debounceSave(id,pid);});
@@ -1152,10 +1161,12 @@ function syncRepRow(id){
   if(!t) return;
   const tr=document.querySelector('#repBody tr[data-id="'+id+'"]');
   if(!tr) return;
+  // sync status
   const sel=tr.querySelector('select.sst');
   if(sel){sel.value=t.st;ST.forEach(function(s){sel.classList.remove(s.c);});sel.classList.add(sCls(t.st));}
-  const cells=tr.querySelectorAll('td');
-  if(cells[1]) cells[1].textContent=t.res_plan||'';
+  // sync res_plan textarea (editable in report)
+  const rpTa=tr.querySelector('textarea[data-f="res_plan"]');
+  if(rpTa && rpTa!==document.activeElement) rpTa.value=t.res_plan||'';
 }
 function syncPlanRow(id){
   const t=periods[pid].tasks.find(function(x){return x.id===id;});
