@@ -333,6 +333,34 @@ body.dark .col-row-name{color:var(--dk-text2)}
 body.dark .col-add-inp{background:var(--dk-input-bg);border-color:var(--dk-border);color:var(--dk-text)}
 .col-add-btn{font-size:12px;padding:6px 14px;background:var(--blue);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:500}
 
+
+/* ── MERGED ROWS ─────────────────────────────────────────────────────────── */
+tr.dr.merged-hidden{display:none}
+tr.dr.merged-primary td.merged-cell{
+  background:inherit;
+  border-left:3px solid var(--blue);
+  position:relative;
+}
+tr.dr.merged-primary td.merged-cell::before{
+  content:'';
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:3px;
+  background:var(--blue);
+  border-radius:0;
+}
+body.dark tr.dr.merged-primary td.merged-cell{
+  border-left-color:var(--dk-accent);
+}
+.merge-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10px;font-weight:600;padding:2px 7px;
+  border-radius:10px;background:#EEF3FF;color:var(--blue);
+  border:1px solid #b3c8ff;cursor:pointer;margin-top:3px;
+  white-space:nowrap;
+}
+.merge-badge:hover{background:#dce8ff}
+body.dark .merge-badge{background:var(--dk-hover);border-color:var(--dk-border);color:var(--dk-accent)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -637,6 +665,18 @@ const DEFAULT_COLS = [
   {key:'comments',label:'Комментарии',       visible:true,  fixed:false},
 ];
 let extraCols = []; // [{key, label}] — user-added columns
+// merges: [{primaryId, mergedIds}] — rows merged into primary
+const merges = {}; // periodId -> [{primaryId, mergedIds:[id,...]}]
+function getMerges(){ return merges[pid] || (merges[pid]=[]); }
+function getMergeGroup(taskId){
+  for(const m of getMerges()){
+    if(m.primaryId===taskId) return m;
+    if(m.mergedIds.includes(taskId)) return m;
+  }
+  return null;
+}
+function isPrimaryMerge(taskId){ const m=getMergeGroup(taskId); return m&&m.primaryId===taskId; }
+function isMergedHidden(taskId){ const m=getMergeGroup(taskId); return m&&m.mergedIds.includes(taskId); }
 let colVisibility = {}; // key -> bool
 
 function getActiveCols(){
@@ -838,6 +878,10 @@ function planRowHTML(t){
   const dirs=[...new Set(periods[pid].tasks.map(x=>x.dir))];
   const dirOpts=dirs.map(d=>'<option value="'+esc(d)+'"'+(d===t.dir?' selected':'')+'>'+esc(d)+'</option>').join('');
   const isSel=selectedIds.has(t.id);
+  const isPrimary=isPrimaryMerge(t.id);
+  const isHidden=isMergedHidden(t.id);
+  const mergeGrp=isPrimary?getMergeGroup(t.id):null;
+  const mergedCount=mergeGrp?(mergeGrp.mergedIds.length+1):0;
   const fileCell='<div class="fl fl-wrap" data-tid="'+t.id+'">'
     +(fl?(fl.split('\\n').map((u,i)=>u.trim()).filter(Boolean).map((u,i)=>'<div class="fl-link"><a href="'+esc(u)+'" target="_blank" title="'+esc(u)+'">🔗 '+shortUrl(u)+'</a><button class="fl-rm" data-i="'+i+'">✕</button></div>').join('')):'')
     +'<div class="fl-add"><input class="fl-input" placeholder="https://..."><button class="fl-btn">+ Добавить</button></div>'
@@ -847,11 +891,13 @@ function planRowHTML(t){
     const val=esc(t[col.key]||'');
     return '<td><textarea class="ce" data-f="'+col.key+'" rows="1" placeholder="'+col.label+'...">'+val+'</textarea></td>';
   }).join('');
-  return '<tr class="dr'+(t._late?' overdue':'')+(isSel?' selected':'')+'" data-id="'+t.id+'" draggable="true">'
+  if(isHidden) return '<tr class="dr merged-hidden" data-id="'+t.id+'"></tr>';
+  return '<tr class="dr'+(t._late?' overdue':'')+(isSel?' selected':'')+(isPrimary?' merged-primary':'')+'" data-id="'+t.id+'" draggable="true">'
     +'<td class="cb-cell" style="width:36px;text-align:center;vertical-align:middle"><input type="checkbox" class="row-cb"'+(isSel?' checked':'')+' style="width:14px;height:14px;cursor:pointer;accent-color:#0040DD"></td>'
     +'<td><span class="drag-handle" title="Перетащить строку">⠿</span><button class="del" title="Удалить">✕</button>'
     +'<textarea class="ce-name" data-f="name" rows="1" placeholder="Новая задача...">'+esc(t.name)+'</textarea>'
-    +'<select class="dir-sel" style="font-size:10px;margin-top:3px;padding:2px 5px;border:1px solid #E6E6E6;border-radius:4px;background:#fff;width:100%;outline:none;cursor:pointer">'+dirOpts+'</select>'
+    +(isPrimary?'<span class="merge-badge" data-merge-id="'+t.id+'" title="Нажми чтобы разъединить">⊞ '+mergedCount+' строки объединены ✕</span>':'')
+    +'<select class="dir-sel"' style="font-size:10px;margin-top:3px;padding:2px 5px;border:1px solid #E6E6E6;border-radius:4px;background:#fff;width:100%;outline:none;cursor:pointer">'+dirOpts+'</select>'
     +'</td>'
     +'<td><textarea class="ce" data-f="desc" rows="2" placeholder="Описание...">'+esc(t.desc)+'</textarea></td>'
     +'<td><textarea class="ce" data-f="res_plan" rows="2" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea></td>'
@@ -937,6 +983,19 @@ function bindPlanRow(tr){
     }
     bindFlCell();
   }
+  // click on merge badge = unmerge
+  var mb=tr.querySelector('.merge-badge');
+  if(mb){
+    mb.addEventListener('click',function(e){
+      e.stopPropagation();
+      var mergeId=+this.dataset.mergeId;
+      var grpIdx=getMerges().findIndex(function(g){ return g.primaryId===mergeId; });
+      if(grpIdx>-1){
+        getMerges().splice(grpIdx,1);
+        renderPlanTable();
+      }
+    });
+  }
   // click to open detail (not on inputs)
   tr.querySelector('td:first-child').style.cursor='pointer';
   tr.querySelector('td:first-child').addEventListener('click',function(e){
@@ -996,6 +1055,8 @@ function renderPlanTable(){
       +'<select class="bulk-move-sel" id="bulkMoveSel"><option value="">→ Перенести в...</option></select>'
       +'<button class="bulk-btn" id="bulkMoveBtn">Переместить</button>'
       +'<div class="bulk-sep"></div>'
+      +'<button class="bulk-btn" id="bulkMergeBtn">⊞ Объединить строки</button>'
+      +'<div class="bulk-sep"></div>'
       +'<button class="bulk-btn danger" id="bulkDelBtn">🗑 Удалить выбранные</button>'
       +'<div class="bulk-sep"></div>'
       +'<button class="bulk-btn" id="bulkClearBtn">✕ Снять выделение</button>';
@@ -1025,6 +1086,40 @@ function renderPlanTable(){
       document.querySelectorAll('#planBody tr.dr').forEach(function(tr){tr.classList.remove('selected');});
       document.querySelectorAll('#planBody .row-cb').forEach(function(cb){cb.checked=false;});
       updateBulkBar();
+    });
+
+    // ── MERGE selected rows ───────────────────────────────────────────────
+    document.getElementById('bulkMergeBtn').addEventListener('click',function(){
+      if(selectedIds.size < 2){
+        alert('Выбери минимум 2 строки для объединения');
+        return;
+      }
+      // Get selected tasks in their current order
+      const ordered = periods[pid].tasks.filter(function(t){ return selectedIds.has(t.id); });
+      if(ordered.length < 2) return;
+
+      // Check: none of them already part of a merge group
+      const alreadyMerged = ordered.filter(function(t){ return getMergeGroup(t.id); });
+      if(alreadyMerged.length > 0){
+        if(!confirm('Некоторые строки уже объединены. Разъединить и создать новую группу?')) return;
+        // Remove existing merge groups for these tasks
+        alreadyMerged.forEach(function(t){
+          const grp = getMergeGroup(t.id);
+          if(grp){
+            const idx = getMerges().indexOf(grp);
+            if(idx>-1) getMerges().splice(idx,1);
+          }
+        });
+      }
+
+      const primaryId = ordered[0].id;
+      const mergedIds = ordered.slice(1).map(function(t){ return t.id; });
+
+      getMerges().push({ primaryId: primaryId, mergedIds: mergedIds });
+
+      // Clear selection
+      selectedIds.clear();
+      renderPlanTable();
     });
   }
 
@@ -1409,6 +1504,7 @@ function initRowDrag(){
   const tb = document.getElementById('planBody');
   if(!tb) return;
   tb.querySelectorAll('tr.dr').forEach(function(tr){
+    if(tr.classList.contains('merged-hidden')) return;
     tr.addEventListener('dragstart',function(e){
       dragSrcId = +this.dataset.id;
       this.classList.add('dragging');
