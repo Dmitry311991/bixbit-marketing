@@ -692,7 +692,12 @@ let pid='q1', planDir='all', planQ='', repDir='all', repQ='';
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function autoH(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
+function autoH(el){
+  if(!el) return;
+  el.style.height='auto';
+  var sh=el.scrollHeight;
+  el.style.height=(sh>0?sh:parseInt(getComputedStyle(el).minHeight||22))+'px';
+}
 function shortUrl(url){
   try{
     const u=new URL(url);
@@ -1043,6 +1048,12 @@ function renderPlanTable(){
   tb.querySelectorAll('tr.dr').forEach(function(tr){bindPlanRow(tr);});
   initRowDrag();
   updateBulkBar();
+  // Re-run autoH after layout
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      tb.querySelectorAll('textarea.ce, textarea.ce-name').forEach(function(el){ autoH(el); });
+    });
+  });
 }
 
 // ── REPORT TABLE ──────────────────────────────────────────────────────────
@@ -1153,6 +1164,12 @@ function renderRepTable(){
   const tb=document.getElementById('repBody');
   tb.innerHTML=h;
   tb.querySelectorAll('tr.dr').forEach(function(tr){bindRepRow(tr);});
+  // Defer autoH until after browser layout — fixes truncated textareas on load
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      tb.querySelectorAll('textarea.ce').forEach(function(el){ autoH(el); });
+    });
+  });
 }
 
 // Sync a single row between plan ↔ report without full re-render
@@ -1359,7 +1376,12 @@ document.querySelectorAll('.main-tab').forEach(function(tab){
     document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('on');});
     document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('on');});
     this.classList.add('on');
-    document.getElementById('panel-'+this.dataset.tab).classList.add('on');
+    var panel=document.getElementById('panel-'+this.dataset.tab);
+    panel.classList.add('on');
+    // Re-run autoH when switching to report tab — elements were hidden before
+    requestAnimationFrame(function(){
+      panel.querySelectorAll('textarea.ce, textarea.ce-name').forEach(function(el){ autoH(el); });
+    });
   });
 });
 document.getElementById('planSearch').addEventListener('input',function(){planQ=this.value;renderPlanTable();});
