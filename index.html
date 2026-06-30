@@ -361,6 +361,15 @@ body.dark tr.dr.merged-primary td.merged-cell{
 }
 .merge-badge:hover{background:#dce8ff}
 body.dark .merge-badge{background:var(--dk-hover);border-color:var(--dk-border);color:var(--dk-accent)}
+
+/* ── REPORT: larger, more readable font ──────────────────────────────────── */
+#panel-report table{font-size:13px}
+#panel-report th{font-size:11px}
+#panel-report td{font-size:13px;line-height:1.5}
+#panel-report .ce{font-size:13px;line-height:1.65}
+#panel-report .fl-link a{font-size:12px}
+#panel-report .sst{font-size:12px;padding:5px 8px}
+#panel-report .sec-row td{font-size:11px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1090,13 +1099,13 @@ function repRowHTML(t){
     +'<div class="fl-add"><input class="fl-input" placeholder="https://..."><button class="fl-btn">+ Добавить</button></div>'
     +'</div>';
   return '<tr class="dr'+(t._late?' overdue':'')+'" data-id="'+t.id+'">'
-    +'<td style="font-weight:600;font-size:12px">'+esc(t.name)+'<br><span style="font-size:10px;color:#9F9B9D;font-weight:400">'+esc(t.dir)+'</span></td>'
-    +'<td><textarea class="ce" data-f="res_plan" rows="1" placeholder="Плановый результат..." style="font-size:11px">'+esc(t.res_plan)+'</textarea></td>'
+    +'<td style="font-weight:600;font-size:14px">'+esc(t.name)+'<br><span style="font-size:11px;color:#9F9B9D;font-weight:400">'+esc(t.dir)+'</span></td>'
+    +'<td><textarea class="ce" data-f="res_plan" rows="1" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea></td>'
     +'<td><textarea class="ce" data-f="res_actual" rows="1" placeholder="Фактический результат...">'+esc(t.res_actual)+'</textarea></td>'
     +'<td><textarea class="ce" data-f="comments" rows="1" placeholder="Сложности, блокеры...">'+esc(t.comments)+'</textarea></td>'
     +'<td><select class="sst '+sc+'" data-f="st">'+buildOpts(t.st)+'</select></td>'
     +'<td>'+fileCell+'</td>'
-    +'<td style="font-size:11px;color:#4A4A4A">'+esc(t.agree)+'</td>'
+    +'<td style="font-size:13px;color:#4A4A4A">'+esc(t.agree)+'</td>'
     +'</tr>';
 }
 
