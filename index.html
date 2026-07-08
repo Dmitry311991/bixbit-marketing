@@ -316,6 +316,49 @@ body.dark .ai-ftr{border-top-color:#2a2a2a}
   #printReport .pr-sec{font-weight:700;font-size:12px;margin:16px 0 6px;color:#D9017A}
 }
 
+/* ── MOBILE CARD VIEW ────────────────────────────────────────────────── */
+@media (max-width: 760px){
+  .hdr-inner{padding:14px 14px 0}
+  .hdr-top{gap:8px}
+  .hdr-top svg:first-child{width:110px;height:34px}
+  .kpi-row{grid-template-columns:repeat(2,1fr);padding:0 14px 14px}
+  .main-tabs{padding:0 14px}
+  .body{padding:14px}
+  .period-bar{gap:6px}
+  .search-row{flex-direction:column;align-items:stretch}
+  .search-row > *{width:100%}
+  .filter-bar{gap:8px}
+
+  .tbl-wrap{overflow-x:visible}
+  table{table-layout:auto;box-shadow:none;background:transparent}
+  colgroup{display:none}
+  thead{display:none}
+  tr.sec-row{display:block;margin:14px 0 8px}
+  tr.sec-row td{display:block;border-radius:8px}
+  tr.dr{display:block;background:#fff;border:1px solid var(--gray100);border-radius:10px;margin-bottom:10px;padding:8px 10px}
+  body.dark tr.dr{background:var(--dk-surface);border-color:var(--dk-border)}
+  tr.dr:nth-child(even) td, tr.dr:nth-child(odd) td{background:transparent!important}
+  tr.dr td{display:flex;flex-direction:column;gap:3px;padding:6px 0;border-bottom:1px solid #F0F0F2;border:none;border-bottom:1px solid #F0F0F2}
+  body.dark tr.dr td{border-bottom-color:var(--dk-border2)}
+  tr.dr td:last-child{border-bottom:none}
+  tr.dr td[data-label]:not([data-label=""])::before{
+    content:attr(data-label);
+    font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--gray400);
+  }
+  body.dark tr.dr td[data-label]:not([data-label=""])::before{color:var(--dk-text3)}
+  td.cb-cell{flex-direction:row!important;align-items:center;gap:8px}
+  td.cb-cell::before{content:'Выбрать'!important}
+  td[data-label=""]{display:none}
+  .drag-handle{display:none} /* dragging is impractical on touch cards */
+  .merge-badge{margin-top:4px;display:inline-block}
+  .fl-add{flex-direction:column;align-items:stretch}
+  .rep-grid{grid-template-columns:1fr}
+  .bulk-bar{flex-direction:column;align-items:stretch}
+  .bulk-bar > *{width:100%}
+  .detail-panel{width:100%;right:-100%}
+}
+
 
 .cb-cell{width:36px!important;padding:6px 6px!important;text-align:center;vertical-align:middle;flex-shrink:0}
 .row-cb{width:14px;height:14px;cursor:pointer;accent-color:var(--blue)}
@@ -1004,31 +1047,31 @@ function planRowHTML(t){
   // Build extra col cells
   const extraCells = extraCols.filter(col=>colVisibility[col.key]!==false).map(col=>{
     const val=esc(t[col.key]||'');
-    return '<td><textarea class="ce" data-f="'+col.key+'" rows="1" placeholder="'+col.label+'...">'+val+'</textarea></td>';
+    return '<td data-label="'+esc(col.label)+'"><textarea class="ce" data-f="'+col.key+'" rows="1" placeholder="'+col.label+'...">'+val+'</textarea></td>';
   }).join('');
   if(isHidden) return '<tr class="dr merged-hidden" data-id="'+t.id+'"></tr>';
   return '<tr class="dr'+(t._late?' overdue':'')+(!t._late&&t._soon?' due-soon':'')+(isSel?' selected':'')+(isPrimary?' merged-primary':'')+'" data-id="'+t.id+'" draggable="true">'
-    +'<td class="cb-cell" style="width:36px;text-align:center;vertical-align:middle"><input type="checkbox" class="row-cb"'+(isSel?' checked':'')+' style="width:14px;height:14px;cursor:pointer;accent-color:#0040DD"></td>'
-    +'<td><span class="drag-handle" title="Перетащить строку">⠿</span><button class="del" title="Удалить">✕</button>'
+    +'<td class="cb-cell" data-label="Выбрать" style="width:36px;text-align:center;vertical-align:middle"><input type="checkbox" class="row-cb"'+(isSel?' checked':'')+' style="width:14px;height:14px;cursor:pointer;accent-color:#0040DD"></td>'
+    +'<td data-label="Задача"><span class="drag-handle" title="Перетащить строку">⠿</span><button class="del" title="Удалить">✕</button>'
     +'<textarea class="ce-name" data-f="name" rows="1" placeholder="Новая задача...">'+esc(t.name)+'</textarea>'
     +(isPrimary?'<span class="merge-badge" data-merge-id="'+t.id+'" title="Нажми чтобы разъединить">⊞ '+mergedCount+' строки объединены ✕</span>':'')
     +'<select class="dir-sel" style="font-size:10px;margin-top:3px;padding:2px 5px;border:1px solid #E6E6E6;border-radius:4px;background:#fff;width:100%;outline:none;cursor:pointer">'+dirOpts+'</select>'
     +'</td>'
-    +'<td><select class="prio-sel prio-'+(t.priority||'none')+'" data-f="priority">'
+    +'<td data-label="Приоритет"><select class="prio-sel prio-'+(t.priority||'none')+'" data-f="priority">'
       +'<option value=""'+(!t.priority?' selected':'')+'>—</option>'
       +'<option value="high"'+(t.priority==='high'?' selected':'')+'>🔴 Высокий</option>'
       +'<option value="med"'+(t.priority==='med'?' selected':'')+'>🟡 Средний</option>'
       +'<option value="low"'+(t.priority==='low'?' selected':'')+'>🟢 Низкий</option>'
       +'</select></td>'
-    +'<td><div class="cell-wrap"><textarea class="ce" data-f="desc" rows="2" placeholder="Описание...">'+esc(t.desc)+'</textarea><button class="ai-gen-btn" data-field="desc" data-taskid="'+t.id+'" title="Сгенерировать через ChatGPT">✦ GPT</button></div></td>'
-    +'<td><div class="cell-wrap"><textarea class="ce" data-f="res_plan" rows="2" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea><button class="ai-gen-btn" data-field="res_plan" data-taskid="'+t.id+'" title="Сгенерировать через ChatGPT">✦ GPT</button></div></td>'
-    +'<td><select class="sst '+sc+'" data-f="st">'+buildOpts(t.st)+'</select></td>'
-    +'<td><textarea class="ce" data-f="agree" rows="1" placeholder="Согласование...">'+esc(t.agree)+'</textarea></td>'
-    +'<td><textarea class="ce" data-f="budget" rows="1" placeholder="Бюджет...">'+esc(t.budget)+'</textarea></td>'
-    +'<td>'+fileCell+'</td>'
-    +'<td><textarea class="ce" data-f="comments" rows="2" placeholder="Комментарии...">'+esc(t.comments)+'</textarea></td>'
+    +'<td data-label="Описание"><div class="cell-wrap"><textarea class="ce" data-f="desc" rows="2" placeholder="Описание...">'+esc(t.desc)+'</textarea><button class="ai-gen-btn" data-field="desc" data-taskid="'+t.id+'" title="Сгенерировать через ChatGPT">✦ GPT</button></div></td>'
+    +'<td data-label="Плановый результат"><div class="cell-wrap"><textarea class="ce" data-f="res_plan" rows="2" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea><button class="ai-gen-btn" data-field="res_plan" data-taskid="'+t.id+'" title="Сгенерировать через ChatGPT">✦ GPT</button></div></td>'
+    +'<td data-label="Статус"><select class="sst '+sc+'" data-f="st">'+buildOpts(t.st)+'</select></td>'
+    +'<td data-label="Согласование"><textarea class="ce" data-f="agree" rows="1" placeholder="Согласование...">'+esc(t.agree)+'</textarea></td>'
+    +'<td data-label="Бюджет"><textarea class="ce" data-f="budget" rows="1" placeholder="Бюджет...">'+esc(t.budget)+'</textarea></td>'
+    +'<td data-label="Файлы">'+fileCell+'</td>'
+    +'<td data-label="Комментарии"><textarea class="ce" data-f="comments" rows="2" placeholder="Комментарии...">'+esc(t.comments)+'</textarea></td>'
     +extraCells
-    +'<td></td>'
+    +'<td data-label=""></td>'
     +'</tr>';
 }
 
@@ -1453,13 +1496,13 @@ function repRowHTML(t){
     +'<div class="fl-add"><input class="fl-input" placeholder="https://..."><button class="fl-btn">+ Добавить</button></div>'
     +'</div>';
   return '<tr class="dr'+(t._late?' overdue':'')+(!t._late&&t._soon?' due-soon':'')+'" data-id="'+t.id+'">'
-    +'<td style="font-weight:600;font-size:14px">'+esc(t.name)+'<br><span style="font-size:11px;color:#9F9B9D;font-weight:400">'+esc(t.dir)+'</span></td>'
-    +'<td><textarea class="ce" data-f="res_plan" rows="1" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea></td>'
-    +'<td><textarea class="ce" data-f="res_actual" rows="1" placeholder="Фактический результат...">'+esc(t.res_actual)+'</textarea></td>'
-    +'<td><textarea class="ce" data-f="comments" rows="1" placeholder="Сложности, блокеры...">'+esc(t.comments)+'</textarea></td>'
-    +'<td><select class="sst '+sc+'" data-f="st">'+buildOpts(t.st)+'</select></td>'
-    +'<td>'+fileCell+'</td>'
-    +'<td style="font-size:13px;color:#4A4A4A">'+esc(t.agree)+'</td>'
+    +'<td data-label="Задача" style="font-weight:600;font-size:14px">'+esc(t.name)+'<br><span style="font-size:11px;color:#9F9B9D;font-weight:400">'+esc(t.dir)+'</span></td>'
+    +'<td data-label="Плановый результат"><textarea class="ce" data-f="res_plan" rows="1" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea></td>'
+    +'<td data-label="Фактический результат"><textarea class="ce" data-f="res_actual" rows="1" placeholder="Фактический результат...">'+esc(t.res_actual)+'</textarea></td>'
+    +'<td data-label="Комментарии"><textarea class="ce" data-f="comments" rows="1" placeholder="Сложности, блокеры...">'+esc(t.comments)+'</textarea></td>'
+    +'<td data-label="Статус"><select class="sst '+sc+'" data-f="st">'+buildOpts(t.st)+'</select></td>'
+    +'<td data-label="Файлы">'+fileCell+'</td>'
+    +'<td data-label="Согласование" style="font-size:13px;color:#4A4A4A">'+esc(t.agree)+'</td>'
     +'</tr>';
 }
 
