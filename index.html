@@ -949,7 +949,9 @@ function bindPlanRow(tr){
     });
   });
   tr.querySelector('select.dir-sel').addEventListener('change',function(){
-    var t=task();if(t)t.dir=this.value;renderPlanTable();renderRepTable();
+    var t=task();if(t)t.dir=this.value;
+    debounceSave(id,pid);
+    renderPlanTable();renderRepTable();
   });
   tr.querySelector('.del').addEventListener('click',function(){
     var idx=periods[pid].tasks.findIndex(function(t){return t.id===id;});
