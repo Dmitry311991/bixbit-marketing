@@ -148,6 +148,8 @@ body.dark tr.dr.overdue:hover td{background:#3D1515!important}
 .new-per-btn{font-size:12px;font-weight:600;padding:7px 14px;border-radius:20px;border:1.5px dashed var(--gray400);background:transparent;color:var(--gray400);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px}
 .new-per-btn:hover{border-color:var(--mag);color:var(--mag)}
 .period-name{font-size:13px;font-weight:700;color:#000;margin-left:auto}
+.per-del-btn{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.35);font-size:11px;padding:2px 4px;border-radius:3px;margin-left:2px;line-height:1;vertical-align:middle}
+.per-del-btn:hover{color:#fff;background:rgba(255,0,0,.35)}
 .filter-bar{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
 .search-row{display:flex;gap:8px;flex-wrap:wrap}
 .srch{flex:1;min-width:160px;font-size:12px;padding:7px 12px;border:1.5px solid var(--gray100);border-radius:8px;outline:none;background:#fff;color:#000;font-family:inherit}
@@ -779,14 +781,39 @@ function updateKPI(){
 
 // ── PERIOD BUTTONS ─────────────────────────────────────────────────────────
 function renderPeriodBtns(){
-  ['perBtns','repPerBtns'].forEach(id=>{
-    const c=document.getElementById(id); c.innerHTML='';
+  ['perBtns','repPerBtns'].forEach(containerId=>{
+    const container=document.getElementById(containerId); container.innerHTML='';
     Object.values(periods).forEach(p=>{
+      const wrap=document.createElement('span');
+      wrap.style.cssText='display:inline-flex;align-items:center;margin-right:4px';
       const b=document.createElement('button');
       b.className='per-btn'+(p.id===pid?' on':'');
       b.textContent=p.label;
       b.onclick=function(){pid=p.id; planDir='all'; repDir='all'; renderAll();};
-      c.appendChild(b);
+      wrap.appendChild(b);
+      // Delete button — only for periods that are NOT q1/q2/q3 (defaults)
+      const isDefault = ['q1','q2','q3'].includes(p.id);
+      if(!isDefault){
+        const del=document.createElement('button');
+        del.className='per-del-btn';
+        del.textContent='✕';
+        del.title='Удалить период «'+p.label+'»';
+        del.onclick=function(e){
+          e.stopPropagation();
+          if(!confirm('Удалить период «'+p.label+'»?\nВсе задачи периода будут удалены из базы.')) return;
+          // Delete from DB
+          const tasks=periods[p.id].tasks;
+          tasks.forEach(function(t){ dbDeleteTask(t.id); });
+          // Delete period from DB
+          supa.from('periods').delete().eq('id',p.id).then(function(){});
+          // Remove from local state
+          delete periods[p.id];
+          if(pid===p.id) pid=Object.keys(periods)[0];
+          renderAll();
+        };
+        wrap.appendChild(del);
+      }
+      container.appendChild(wrap);
     });
   });
   document.getElementById('planPeriodName').textContent=periods[pid].label;
