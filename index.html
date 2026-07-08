@@ -298,6 +298,24 @@ body.dark .ai-ftr{border-top-color:#2a2a2a}
 .ai-spinner{display:inline-block;width:16px;height:16px;border:2px solid #E6E6E6;border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* ── PRINT / PDF REPORT ──────────────────────────────────────────────── */
+#printReport{display:none}
+@media print{
+  body *{visibility:hidden}
+  #printReport, #printReport *{visibility:visible}
+  #printReport{display:block!important;position:absolute;top:0;left:0;width:100%;padding:20px;background:#fff;color:#000}
+  #printReport h1{font-size:20px;margin-bottom:2px}
+  #printReport .pr-sub{font-size:11px;color:#666;margin-bottom:16px}
+  #printReport .pr-kpi{display:flex;gap:16px;margin-bottom:20px;padding:12px 0;border-top:1px solid #ddd;border-bottom:1px solid #ddd}
+  #printReport .pr-kpi div{font-size:11px}
+  #printReport .pr-kpi b{display:block;font-size:18px;font-family:'Fira Code',monospace}
+  #printReport table{width:100%;border-collapse:collapse;margin-bottom:18px;font-size:10px;page-break-inside:auto}
+  #printReport tr{page-break-inside:avoid}
+  #printReport th{background:#f0f0f0;text-align:left;padding:6px 8px;border:1px solid #ddd;font-size:9px;text-transform:uppercase}
+  #printReport td{padding:6px 8px;border:1px solid #ddd;vertical-align:top}
+  #printReport .pr-sec{font-weight:700;font-size:12px;margin:16px 0 6px;color:#D9017A}
+}
+
 
 .cb-cell{width:36px!important;padding:6px 6px!important;text-align:center;vertical-align:middle;flex-shrink:0}
 .row-cb{width:14px;height:14px;cursor:pointer;accent-color:var(--blue)}
@@ -339,6 +357,15 @@ body.dark .gs-item{border-color:var(--dk-border)}
 body.dark .gs-item:hover{border-color:var(--dk-accent);background:var(--dk-hover)}
 body.dark .gs-item-name{color:var(--dk-text)}
 body.dark .gs-item-meta{color:var(--dk-text3)}
+/* ── UNDO TOAST ──────────────────────────────────────────────────────── */
+.undo-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(0);
+  background:#1a1a1a;color:#fff;padding:12px 16px;border-radius:10px;
+  display:flex;align-items:center;gap:14px;font-size:13px;z-index:500;
+  box-shadow:0 8px 30px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .2s, transform .2s}
+.undo-toast.show{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(-6px)}
+.undo-toast button{background:none;border:1px solid rgba(255,255,255,.3);color:#fff;
+  padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600}
+.undo-toast button:hover{background:rgba(255,255,255,.15)}
 .col-modal{background:#fff;border-radius:12px;padding:24px;width:380px;box-shadow:0 8px 40px rgba(0,0,0,.2)}
 body.dark .col-modal{background:var(--dk-surface)}
 .col-modal h3{font-size:14px;font-weight:700;margin-bottom:14px;color:#000}
@@ -450,6 +477,7 @@ body.dark .ai-gen-btn:hover{color:#34d399;border-color:#34d399;background:#052e1
         <div class="dtitle">Digital Marketing · Plan & Report</div>
       </div>
       <button class="theme-btn" id="themeBtn">🌙 Тёмная</button>
+      <button class="theme-btn" id="backupBtn" title="Скачать резервную копию всех данных">📥 Бэкап</button>
       <button class="theme-btn" id="logoutBtn" title="Выйти из аккаунта">⏻ Выйти</button>
       <button class="theme-btn" id="gptKeyBtn" title="OpenAI ключ">🔑 GPT ключ</button>
     </div>
@@ -516,6 +544,7 @@ body.dark .ai-gen-btn:hover{color:#34d399;border-color:#34d399;background:#052e1
     <div class="search-row">
       <input class="srch" id="repSearch" placeholder="Поиск по отчёту...">
       <button class="export-btn" id="exportRep">↓ CSV отчёт</button>
+      <button class="ai-btn" id="exportPdfBtn" style="background:linear-gradient(135deg,#0040DD,#0075FF)">📄 Скачать PDF</button>
     </div>
     <div class="dir-btns" id="repDirBtns"></div>
   </div>
@@ -711,6 +740,23 @@ DEFAULT_COLS.forEach(col => colVisibility[col.key] = true);
 let selectedIds = new Set();
 let sortField = null; // 'name' | 'due' | 'st' | 'priority' | null
 let sortDir = 'asc';
+let undoTimer=null;
+function showUndoToast(message, onUndo){
+  const toast=document.getElementById('undoToast');
+  const msgEl=document.getElementById('undoToastMsg');
+  const btn=document.getElementById('undoToastBtn');
+  msgEl.textContent=message;
+  toast.classList.add('show');
+  clearTimeout(undoTimer);
+  const newBtn=btn.cloneNode(true);
+  btn.replaceWith(newBtn);
+  newBtn.addEventListener('click',function(){
+    onUndo();
+    toast.classList.remove('show');
+    clearTimeout(undoTimer);
+  });
+  undoTimer=setTimeout(function(){ toast.classList.remove('show'); }, 6000);
+}
 
 function updateBulkBar(){
   const bar = document.getElementById('bulkBar');
@@ -1021,7 +1067,18 @@ function bindPlanRow(tr){
   }
   tr.querySelector('.del').addEventListener('click',function(){
     var idx=periods[pid].tasks.findIndex(function(t){return t.id===id;});
-    if(idx>-1){periods[pid].tasks.splice(idx,1);dbDeleteTask(id);renderAll();}
+    if(idx>-1){
+      var deletedTask=periods[pid].tasks[idx];
+      var deletedPid=pid;
+      periods[pid].tasks.splice(idx,1);dbDeleteTask(id);renderAll();
+      showUndoToast('Задача удалена: «'+(deletedTask.name||'без названия').slice(0,40)+'»', function(){
+        if(periods[deletedPid]){
+          periods[deletedPid].tasks.splice(idx,0,deletedTask);
+          dbSaveTask(deletedTask,deletedPid);
+          if(pid===deletedPid) renderAll();
+        }
+      });
+    }
   });
 
   // GPT generate buttons
@@ -1225,11 +1282,20 @@ function renderPlanTable(){
     // bind bulk actions
     document.getElementById('bulkDelBtn').addEventListener('click',function(){
       if(!confirm('Удалить '+selectedIds.size+' задач?')) return;
+      const deletedTasks=[];
+      const deletedPid=pid;
       selectedIds.forEach(function(id){
         const idx=periods[pid].tasks.findIndex(function(t){return t.id===id;});
-        if(idx>-1){periods[pid].tasks.splice(idx,1); dbDeleteTask(id);}
+        if(idx>-1){deletedTasks.push(periods[pid].tasks[idx]); periods[pid].tasks.splice(idx,1); dbDeleteTask(id);}
       });
+      const count=deletedTasks.length;
       selectedIds.clear(); renderAll();
+      showUndoToast('Удалено задач: '+count, function(){
+        if(periods[deletedPid]){
+          deletedTasks.forEach(function(t){ periods[deletedPid].tasks.push(t); dbSaveTask(t,deletedPid); });
+          if(pid===deletedPid) renderAll();
+        }
+      });
     });
     document.getElementById('bulkMoveBtn').addEventListener('click',function(){
       const dir=document.getElementById('bulkMoveSel').value;
@@ -1787,6 +1853,40 @@ document.getElementById('globalSearchInp').addEventListener('input',function(){
 document.getElementById('repSearch').addEventListener('input',function(){repQ=this.value;renderRepTable();});
 document.getElementById('exportPlan').addEventListener('click',function(){exportCSV(false);});
 document.getElementById('exportRep').addEventListener('click',function(){exportCSV(true);});
+document.getElementById('exportPdfBtn').addEventListener('click',function(){
+  const tasks=periods[pid].tasks;
+  const total=tasks.length;
+  const done=tasks.filter(function(t){return t.st==='Выполнено';}).length;
+  const prog=tasks.filter(function(t){return t.st==='В работе'||t.st==='Макет в дизайне'||t.st==='В тех отделе'||t.st==='У интегратора'||t.st==='В работе у интегратора'||t.st==='Согласование';}).length;
+  const wait=tasks.filter(function(t){return t.st==='В ожидании';}).length;
+  const moved=tasks.filter(function(t){return t.st==='Перенесено'||t.st==='Не выполнено';}).length;
+  const pct=total?Math.round(done/total*100):0;
+
+  const grp={};
+  tasks.forEach(function(t){ if(!grp[t.dir]) grp[t.dir]=[]; grp[t.dir].push(t); });
+
+  let html='<h1>BiXBiT — Отчёт по маркетингу</h1>'
+    +'<div class="pr-sub">'+esc(periods[pid].label)+' · сформировано '+new Date().toLocaleDateString('ru-RU')+'</div>'
+    +'<div class="pr-kpi">'
+    +'<div>Всего задач<b>'+total+'</b></div>'
+    +'<div>Выполнено<b>'+done+' ('+pct+'%)</b></div>'
+    +'<div>В работе<b>'+prog+'</b></div>'
+    +'<div>В ожидании<b>'+wait+'</b></div>'
+    +'<div>Перенесено<b>'+moved+'</b></div>'
+    +'</div>';
+
+  Object.keys(grp).forEach(function(dir){
+    html+='<div class="pr-sec">'+esc(dir.toUpperCase())+' · '+grp[dir].length+' задач</div>';
+    html+='<table><thead><tr><th>Задача</th><th>Плановый результат</th><th>Фактический результат</th><th>Статус</th></tr></thead><tbody>';
+    grp[dir].forEach(function(t){
+      html+='<tr><td>'+esc(t.name||'')+'</td><td>'+esc(t.res_plan||'')+'</td><td>'+esc(t.res_actual||'')+'</td><td>'+esc(t.st||'')+'</td></tr>';
+    });
+    html+='</tbody></table>';
+  });
+
+  document.getElementById('printReport').innerHTML=html;
+  window.print();
+});
 
 // ── DARK THEME ─────────────────────────────────────────────────────────────
 // Re-measure textarea heights on window resize
@@ -2051,6 +2151,18 @@ document.getElementById('gptKeyBtn').addEventListener('click',function(){
   localStorage.setItem('bixbit_openai_key', k.trim());
   alert('✓ Ключ сохранён');
 });
+document.getElementById('backupBtn').addEventListener('click',function(){
+  const dump={ exportedAt:new Date().toISOString(), periods:{} };
+  Object.values(periods).forEach(function(p){
+    dump.periods[p.id]={ id:p.id, label:p.label, code:p.code, tasks:p.tasks };
+  });
+  const blob=new Blob([JSON.stringify(dump,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const dateStr=new Date().toISOString().slice(0,10);
+  a.download='bixbit_backup_'+dateStr+'.json';
+  a.click();
+});
 document.getElementById('logoutBtn').addEventListener('click',async function(){
   await supa.auth.signOut();
   showLogin();
@@ -2071,6 +2183,11 @@ supa.auth.onAuthStateChange((event,session)=>{
 });
 </script>
 
+<div id="printReport"></div>
+<div class="undo-toast" id="undoToast">
+  <span id="undoToastMsg"></span>
+  <button id="undoToastBtn">Отменить</button>
+</div>
 </div><!-- /appRoot -->
 </body>
 </html>
