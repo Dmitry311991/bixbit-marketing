@@ -603,6 +603,14 @@ body.dark .ai-gen-btn:hover{color:#34d399;border-color:#34d399;background:#052e1
     <div class="dp-field"><div class="dp-lbl">Срок</div><div class="dp-val" id="dpDue"></div></div>
     <div class="dp-field"><div class="dp-lbl">Файлы</div><div class="dp-val" id="dpFiles"></div></div>
     <div class="dp-field"><div class="dp-lbl">Комментарии</div><div class="dp-val" id="dpComments" style="color:#9F9B9D;font-style:italic">—</div></div>
+    <div class="dp-hr"></div>
+    <div class="dp-field">
+      <div class="dp-lbl" style="display:flex;align-items:center;justify-content:space-between">
+        <span>История изменений</span>
+        <button id="dpHistoryToggle" style="background:none;border:1px solid var(--gray100);border-radius:5px;font-size:10px;padding:2px 8px;cursor:pointer;color:var(--gray600);font-family:inherit">Показать</button>
+      </div>
+      <div id="dpHistoryList" style="display:none;margin-top:8px;flex-direction:column;gap:8px"></div>
+    </div>
   </div>
 </div>
 
@@ -1047,14 +1055,20 @@ function bindPlanRow(tr){
   tr.querySelectorAll('select.sst').forEach(function(sel){
     ST.forEach(function(s){sel.classList.remove(s.c);}); sel.classList.add(sCls(sel.value));
     sel.addEventListener('change',function(){
-      var t=task();if(t)t.st=this.value;
+      var t=task();
+      var oldSt=t?t.st:'';
+      if(t)t.st=this.value;
       ST.forEach(function(s){this.classList.remove(s.c);}.bind(this)); this.classList.add(sCls(this.value));
       updateKPI(); syncRepRow(id); renderRepStats(); debounceSave(id,pid);
+      logHistory(id,pid,'Статус',oldSt,this.value);
     });
   });
   tr.querySelector('select.dir-sel').addEventListener('change',function(){
-    var t=task();if(t)t.dir=this.value;
+    var t=task();
+    var oldDir=t?t.dir:'';
+    if(t)t.dir=this.value;
     debounceSave(id,pid);
+    logHistory(id,pid,'Направление',oldDir,this.value);
     renderPlanTable();renderRepTable();
   });
   var prioSel=tr.querySelector('select.prio-sel');
@@ -1454,6 +1468,7 @@ function bindRepRow(tr){
   const task=function(){return periods[pid].tasks.find(function(t){return t.id===id;});};
   tr.querySelectorAll('textarea.ce').forEach(function(el){
     autoH(el);
+    el.addEventListener('focus',function(){ this.dataset.oldVal=this.value; });
     el.addEventListener('input',function(){
       var t=task();
       if(t){
@@ -1463,6 +1478,10 @@ function bindRepRow(tr){
       }
       autoH(this);
       debounceSave(id,pid);
+    });
+    el.addEventListener('blur',function(){
+      var fieldLabels={res_actual:'Фактический результат',comments:'Комментарии',res_plan:'Плановый результат'};
+      logHistory(id,pid,fieldLabels[this.dataset.f]||this.dataset.f,this.dataset.oldVal,this.value);
     });
   });
   tr.querySelectorAll('input.fi').forEach(function(el){
@@ -1508,9 +1527,12 @@ function bindRepRow(tr){
   tr.querySelectorAll('select.sst').forEach(function(sel){
     ST.forEach(function(s){sel.classList.remove(s.c);}); sel.classList.add(sCls(sel.value));
     sel.addEventListener('change',function(){
-      var t=task();if(t)t.st=this.value;
+      var t=task();
+      var oldSt=t?t.st:'';
+      if(t)t.st=this.value;
       ST.forEach(function(s){this.classList.remove(s.c);}.bind(this)); this.classList.add(sCls(this.value));
       updateKPI(); syncPlanRow(id); renderRepStats(); debounceSave(id,pid);
+      logHistory(id,pid,'Статус',oldSt,this.value);
     });
   });
 }
@@ -1640,10 +1662,16 @@ function openDetail(id){
   sw.innerHTML='<select class="sst '+sCls(t.st)+'" id="dpSt">'+buildOpts(t.st)+'</select>';
   document.getElementById('dpSt').addEventListener('change',function(){
     const task=periods[pid].tasks.find(function(x){return x.id===detailId;});
+    const oldSt=task?task.st:'';
     if(task) task.st=this.value;
     ST.forEach(function(s){this.classList.remove(s.c);}.bind(this)); this.classList.add(sCls(this.value));
     updateKPI(); syncPlanRow(detailId); syncRepRow(detailId); renderRepStats(); debounceSave(detailId,pid);
+    logHistory(detailId,pid,'Статус',oldSt,this.value);
   });
+  // Reset history panel state for the newly opened task
+  document.getElementById('dpHistoryList').style.display='none';
+  document.getElementById('dpHistoryList').innerHTML='';
+  document.getElementById('dpHistoryToggle').textContent='Показать';
   document.getElementById('detailOverlay').classList.add('open');
   document.getElementById('detailPanel').classList.add('open');
 }
@@ -1653,6 +1681,30 @@ function closeDetail(){
 }
 document.getElementById('dpClose').addEventListener('click',closeDetail);
 document.getElementById('detailOverlay').addEventListener('click',closeDetail);
+document.getElementById('dpHistoryToggle').addEventListener('click',async function(){
+  const list=document.getElementById('dpHistoryList');
+  const btn=this;
+  if(list.style.display==='flex'){
+    list.style.display='none'; btn.textContent='Показать';
+    return;
+  }
+  btn.textContent='Загрузка...';
+  const rows=await loadHistory(detailId);
+  btn.textContent='Скрыть';
+  list.style.display='flex';
+  if(!rows.length){
+    list.innerHTML='<div style="font-size:11px;color:var(--gray400);font-style:italic">Изменений пока нет</div>';
+    return;
+  }
+  list.innerHTML=rows.map(function(r){
+    const dt=new Date(r.changed_at);
+    const dateStr=dt.toLocaleDateString('ru-RU')+' '+dt.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+    return '<div style="border-left:2px solid var(--gray100);padding-left:10px;font-size:11px">'
+      +'<div style="color:var(--gray400);margin-bottom:2px">'+dateStr+' · '+esc(r.changed_by||'неизвестно')+'</div>'
+      +'<div><b>'+esc(r.field)+':</b> '+esc((r.old_value||'—').slice(0,60))+' → '+esc((r.new_value||'—').slice(0,60))+'</div>'
+      +'</div>';
+  }).join('');
+});
 
 // ── AI REPORT ─────────────────────────────────────────────────────────────
 document.getElementById('aiBtn').addEventListener('click',async function(){
@@ -2025,6 +2077,26 @@ async function dbSavePeriod(p) {
   if (error) console.error('savePeriod:', error);
 }
 
+// ── CHANGE HISTORY ────────────────────────────────────────────────────────
+async function logHistory(taskId, periodId, field, oldValue, newValue){
+  if((oldValue||'')===(newValue||'')) return; // no real change
+  try{
+    await supa.from('task_history').insert({
+      task_id: taskId, period_id: periodId, field: field,
+      old_value: (oldValue||'').slice(0,500), new_value: (newValue||'').slice(0,500),
+      changed_by: currentUserEmail || 'неизвестно'
+    });
+  }catch(e){ console.error('logHistory error:', e); }
+}
+async function loadHistory(taskId){
+  try{
+    const { data, error } = await supa.from('task_history')
+      .select('*').eq('task_id', taskId).order('changed_at', { ascending:false }).limit(30);
+    if(error){ console.error('loadHistory:', error); return []; }
+    return data || [];
+  }catch(e){ console.error('loadHistory error:', e); return []; }
+}
+
 async function dbSaveTask(task, periodId) {
   const { error } = await supa.from('tasks').upsert({
     id: task.id, period_id: periodId,
@@ -2085,6 +2157,7 @@ async function initFromDB() {
       hideLoader();
       renderAll();
       setTimeout(function(){ autoHAll(document); }, 400);
+      subscribeRealtime();
     } else {
       // First run — seed DB with Q1+Q2 data
       await seedDB();
@@ -2107,10 +2180,61 @@ async function seedDB() {
     await dbSaveTask(task, pid2);
   }
   showLoader('Готово! Данные сохранены ✓');
-  setTimeout(() => { hideLoader(); renderAll(); }, 1200);
+  setTimeout(() => { hideLoader(); renderAll(); subscribeRealtime(); }, 1200);
+}
+
+// ── REALTIME SYNC ────────────────────────────────────────────────────────
+let realtimeDebounce=null;
+function scheduleRealtimeRefresh(){
+  const active=document.activeElement;
+  const isEditing = active && (active.tagName==='TEXTAREA'||active.tagName==='INPUT'||active.tagName==='SELECT')
+    && active.closest && active.closest('#panel-plan, #panel-report, #detailPanel');
+  if(isEditing){
+    active.addEventListener('blur', function onBlur(){
+      active.removeEventListener('blur', onBlur);
+      scheduleRealtimeRefresh();
+    }, {once:true});
+    return;
+  }
+  clearTimeout(realtimeDebounce);
+  realtimeDebounce=setTimeout(doRealtimeRefresh, 700);
+}
+async function doRealtimeRefresh(){
+  try{
+    const { data: pRows } = await supa.from('periods').select('*').order('created_at');
+    const { data: tRows } = await supa.from('tasks').select('*').order('sort_order');
+    if(!pRows) return;
+    const wasDetailOpen = document.getElementById('detailPanel').classList.contains('open');
+    const wasDetailId = wasDetailOpen ? detailId : null;
+    const oldPid = pid;
+    Object.keys(periods).forEach(function(k){ delete periods[k]; });
+    pRows.forEach(function(p){ periods[p.id]={id:p.id,label:p.label,code:p.code,tasks:[]}; });
+    (tRows||[]).forEach(function(t){
+      const p=periods[t.period_id];
+      if(p) p.tasks.push({id:t.id,dir:t.dir,name:t.task_name,desc:t.description,res_plan:t.res_plan,
+        due:t.due,agree:t.agree,budget:t.budget,st:t.st,res_actual:t.res_actual,
+        files:t.files,comments:t.comments,priority:t.priority||''});
+    });
+    pid = periods[oldPid] ? oldPid : Object.keys(periods)[0];
+    let maxId=5999;
+    Object.values(periods).forEach(function(p){ p.tasks.forEach(function(t){ if(t.id>maxId) maxId=t.id; }); });
+    nextId=maxId+1;
+    renderAll();
+    if(wasDetailId && periods[pid] && periods[pid].tasks.find(function(t){return t.id===wasDetailId;})) openDetail(wasDetailId);
+  }catch(e){ console.error('realtime refresh error:', e); }
+}
+let realtimeSubscribed=false;
+function subscribeRealtime(){
+  if(realtimeSubscribed) return;
+  realtimeSubscribed=true;
+  supa.channel('bixbit-live-changes')
+    .on('postgres_changes',{event:'*',schema:'public',table:'tasks'}, scheduleRealtimeRefresh)
+    .on('postgres_changes',{event:'*',schema:'public',table:'periods'}, scheduleRealtimeRefresh)
+    .subscribe();
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────
+let currentUserEmail='';
 function showApp(){
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('appRoot').style.display='block';
@@ -2138,6 +2262,7 @@ async function doLogin(){
     showLogin(error.message==='Invalid login credentials'?'Неверный email или пароль':error.message);
     return;
   }
+  currentUserEmail=email;
   showApp();
 }
 
@@ -2174,7 +2299,7 @@ document.getElementById('loginEmail').addEventListener('keydown',function(e){ if
 // Check existing session on boot
 (async function bootAuth(){
   const {data:{session}}=await supa.auth.getSession();
-  if(session){ showApp(); } else { showLogin(); }
+  if(session){ currentUserEmail=session.user.email||''; showApp(); } else { showLogin(); }
 })();
 
 // Re-check on auth state changes (e.g. token refresh, sign out elsewhere)
