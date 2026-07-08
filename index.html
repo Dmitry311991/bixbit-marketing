@@ -676,8 +676,14 @@ function updateBulkBar(){
     const sel = document.getElementById('bulkMoveSel');
     if (sel) {
       const dirs = [...new Set(periods[pid].tasks.map(t=>t.dir))];
-      sel.innerHTML = '<option value="">→ Перенести в...</option>'
+      sel.innerHTML = '<option value="">→ Раздел...</option>'
         + dirs.map(d=>'<option value="'+esc(d)+'">'+esc(d)+'</option>').join('');
+    }
+    const perSel = document.getElementById('bulkPeriodSel');
+    if (perSel) {
+      const others = Object.values(periods).filter(function(p){ return p.id !== pid; });
+      perSel.innerHTML = '<option value="">→ Период...</option>'
+        + others.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.label)+'</option>'; }).join('');
     }
   } else {
     bar.classList.remove('show');
@@ -1112,8 +1118,11 @@ function renderPlanTable(){
     bar.id='bulkBar'; bar.className='bulk-bar';
     bar.innerHTML='<span class="bulk-count" id="bulkCount">0 выбрано</span>'
       +'<div class="bulk-sep"></div>'
-      +'<select class="bulk-move-sel" id="bulkMoveSel"><option value="">→ Перенести в...</option></select>'
+      +'<select class="bulk-move-sel" id="bulkMoveSel"><option value="">→ Раздел...</option></select>'
       +'<button class="bulk-btn" id="bulkMoveBtn">Переместить</button>'
+      +'<div class="bulk-sep"></div>'
+      +'<select class="bulk-move-sel" id="bulkPeriodSel"><option value="">→ Период...</option></select>'
+      +'<button class="bulk-btn" id="bulkPeriodBtn">В другой период</button>'
       +'<div class="bulk-sep"></div>'
       +'<button class="bulk-btn" id="bulkMergeBtn">⊞ Объединить строки</button>'
       +'<div class="bulk-sep"></div>'
@@ -1140,6 +1149,29 @@ function renderPlanTable(){
         if(t){t.dir=dir; debounceSave(id,pid);}
       });
       selectedIds.clear(); renderAll();
+    });
+    document.getElementById('bulkPeriodBtn').addEventListener('click',function(){
+      const targetPid=document.getElementById('bulkPeriodSel').value;
+      if(!targetPid || targetPid===pid) return;
+      const target=periods[targetPid];
+      if(!target) return;
+      const idsToMove=[...selectedIds];
+      const moved=[];
+      idsToMove.forEach(function(id){
+        const idx=periods[pid].tasks.findIndex(function(t){return t.id===id;});
+        if(idx>-1){
+          const [task]=periods[pid].tasks.splice(idx,1);
+          // Assign a fresh unique id to avoid any cross-period collisions
+          const newTask=Object.assign({},task,{id:nextId++});
+          target.tasks.push(newTask);
+          dbDeleteTask(id);
+          dbSaveTask(newTask,targetPid);
+          moved.push(newTask.name||'(без названия)');
+        }
+      });
+      selectedIds.clear();
+      renderAll();
+      if(moved.length) alert('Перенесено в «'+target.label+'»: '+moved.length+' задач');
     });
     document.getElementById('bulkClearBtn').addEventListener('click',function(){
       selectedIds.clear();
