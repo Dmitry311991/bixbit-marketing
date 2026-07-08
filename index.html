@@ -792,7 +792,7 @@ function renderPeriodBtns(){
       b.onclick=function(){pid=p.id; planDir='all'; repDir='all'; renderAll();};
       wrap.appendChild(b);
       // Delete button — only for periods that are NOT q1/q2/q3 (defaults)
-      const isDefault = ['q1','q2','q3'].includes(p.id);
+      const isDefault = ['q1','q2'].includes(p.id); // only Q1 and Q2 are protected
       if(!isDefault){
         const del=document.createElement('button');
         del.className='per-del-btn';
