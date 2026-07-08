@@ -376,6 +376,20 @@ body.dark .merge-badge{background:var(--dk-hover);border-color:var(--dk-border);
 #panel-plan .fi{font-size:12px}
 #panel-plan .dir-sel{font-size:11px!important}
 
+
+/* ── AI GENERATE BUTTON IN CELL ─────────────────────────────────────── */
+.cell-wrap{display:flex;flex-direction:column;gap:3px}
+.ai-gen-btn{
+  align-self:flex-start;background:none;
+  border:1px solid var(--gray100);cursor:pointer;
+  font-size:10px;color:var(--gray400);padding:2px 8px;
+  border-radius:4px;line-height:1.5;font-family:inherit;
+  white-space:nowrap;transition:all .12s;
+}
+.ai-gen-btn:hover{color:#10a37f;border-color:#10a37f;background:#f0faf6}
+body.dark .ai-gen-btn{border-color:var(--dk-border);color:var(--dk-text3)}
+body.dark .ai-gen-btn:hover{color:#34d399;border-color:#34d399;background:#052e1c}
+.ai-gen-btn:disabled{opacity:.5;cursor:not-allowed}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -417,6 +431,7 @@ body.dark .merge-badge{background:var(--dk-hover);border-color:var(--dk-border);
       </div>
       <button class="theme-btn" id="themeBtn">🌙 Тёмная</button>
       <button class="theme-btn" id="logoutBtn" title="Выйти из аккаунта">⏻ Выйти</button>
+      <button class="theme-btn" id="gptKeyBtn" title="OpenAI ключ">🔑 GPT ключ</button>
     </div>
     <div class="kpi-row">
       <div class="kpi"><div class="kpi-lbl">Всего задач</div><div class="kpi-val" id="kTotal" style="font-family:'Fira Code',monospace">—</div><div class="kpi-sub">в периоде</div></div>
@@ -874,8 +889,8 @@ function planRowHTML(t){
     +(isPrimary?'<span class="merge-badge" data-merge-id="'+t.id+'" title="Нажми чтобы разъединить">⊞ '+mergedCount+' строки объединены ✕</span>':'')
     +'<select class="dir-sel" style="font-size:10px;margin-top:3px;padding:2px 5px;border:1px solid #E6E6E6;border-radius:4px;background:#fff;width:100%;outline:none;cursor:pointer">'+dirOpts+'</select>'
     +'</td>'
-    +'<td><textarea class="ce" data-f="desc" rows="2" placeholder="Описание...">'+esc(t.desc)+'</textarea></td>'
-    +'<td><textarea class="ce" data-f="res_plan" rows="2" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea></td>'
+    +'<td><div class="cell-wrap"><textarea class="ce" data-f="desc" rows="2" placeholder="Описание...">'+esc(t.desc)+'</textarea><button class="ai-gen-btn" data-field="desc" data-taskid="'+t.id+'" title="Сгенерировать через ChatGPT">✦ GPT</button></div></td>'
+    +'<td><div class="cell-wrap"><textarea class="ce" data-f="res_plan" rows="2" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea><button class="ai-gen-btn" data-field="res_plan" data-taskid="'+t.id+'" title="Сгенерировать через ChatGPT">✦ GPT</button></div></td>'
     +'<td><select class="sst '+sc+'" data-f="st">'+buildOpts(t.st)+'</select></td>'
     +'<td><input class="ce" type="text" data-f="agree" value="'+esc(t.agree)+'" placeholder="Согласование..."></td>'
     +'<td><input class="ce" type="text" data-f="budget" value="'+esc(t.budget)+'" placeholder="Бюджет..."></td>'
@@ -922,6 +937,62 @@ function bindPlanRow(tr){
     if(idx>-1){periods[pid].tasks.splice(idx,1);dbDeleteTask(id);renderAll();}
   });
 
+  // GPT generate buttons
+  tr.querySelectorAll('.ai-gen-btn').forEach(function(btn){
+    btn.addEventListener('click', async function(e){
+      e.stopPropagation();
+      const field = this.dataset.field;
+      const t = task();
+      if(!t) return;
+      if(!t.name || t.name.trim().length < 3){
+        alert('Сначала введи название задачи'); return;
+      }
+      // Prompt for key if not set
+      if(!getOpenAIKey()){
+        const k = prompt('Введи OpenAI API ключ (sk-proj-...):\nСохранится в браузере, вводить один раз.');
+        if(!k || !k.trim()){ return; }
+        localStorage.setItem('bixbit_openai_key', k.trim());
+      }
+      const origText = this.textContent;
+      this.textContent = '↻ генерирую...';
+      this.disabled = true;
+      const btnEl = this;
+      const ta = this.parentNode.querySelector('textarea');
+      const isDesc = field === 'desc';
+      const prompt = isDesc
+        ? 'Ты маркетинг-аналитик компании BiXBiT (ASIC firmware, AMS платформа для управления майнингом). Напиши краткое описание задачи (2-3 предложения, деловой стиль, без воды) для задачи: «' + t.name + '». Направление: ' + t.dir + '. Только текст описания.'
+        : 'Ты маркетинг-аналитик компании BiXBiT (ASIC firmware, AMS платформа для управления майнингом). Напиши плановый результат задачи (конкретные метрики и ожидаемые итоги, 2-4 пункта) для задачи: «' + t.name + '». Описание: ' + (t.desc || 'не указано') + '. Только текст результата.';
+      try {
+        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + getOpenAIKey()
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            max_tokens: 300,
+            messages: [{ role: 'user', content: prompt }]
+          })
+        });
+        const data = await resp.json();
+        if(data.error) throw new Error(data.error.message);
+        const text = data.choices && data.choices[0] ? data.choices[0].message.content.trim() : '';
+        if(text){
+          ta.value = text;
+          t[field] = text;
+          autoH(ta);
+          debounceSave(id, pid);
+          if(field === 'res_plan') syncRepRow(id);
+        }
+      } catch(err){
+        console.error('GPT gen error:', err);
+        alert('Ошибка генерации: ' + err.message);
+      }
+      btnEl.textContent = origText;
+      btnEl.disabled = false;
+    });
+  });
   // bind multi-link file cell
   var flWrap=tr.querySelector('.fl-wrap');
   if(flWrap){
@@ -1604,6 +1675,8 @@ const SUPA_URL = 'https://pgafsuwvdfdbloyjdspv.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnYWZzdXd2ZGZkYmxveWpkc3B2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTU5MjMsImV4cCI6MjA5ODA3MTkyM30.NBBF-C5NzmvjTD1AvruMlvEn--plwLgHtphC43GgsIw';
 
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+// OpenAI key in localStorage — never in source code
+function getOpenAIKey(){ return localStorage.getItem('bixbit_openai_key')||''; }
 
 // ── LOADING OVERLAY ──────────────────────────────────────────────────────
 function showLoader(msg) {
@@ -1736,6 +1809,15 @@ async function doLogin(){
 }
 
 document.getElementById('loginBtn').addEventListener('click',doLogin);
+document.getElementById('gptKeyBtn').addEventListener('click',function(){
+  const cur = getOpenAIKey();
+  const k = prompt('OpenAI API ключ (sk-proj-...):\nОставь пустым — сбросить ключ.', cur ? '***скрыт***' : '');
+  if(k===null) return;
+  if(!k.trim()){ localStorage.removeItem('bixbit_openai_key'); alert('Ключ удалён'); return; }
+  if(k.trim()==='***скрыт***') return;
+  localStorage.setItem('bixbit_openai_key', k.trim());
+  alert('✓ Ключ сохранён');
+});
 document.getElementById('logoutBtn').addEventListener('click',async function(){
   await supa.auth.signOut();
   showLogin();
