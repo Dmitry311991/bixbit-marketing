@@ -956,13 +956,17 @@ function bindPlanRow(tr){
       try {
         const resp = await fetch('https://api.anthropic.com/v1/messages',{
           method:'POST',
-          headers:{'Content-Type':'application/json'},
+          headers:{
+            'Content-Type':'application/json',
+            'anthropic-dangerous-direct-browser-access':'true'
+          },
           body: JSON.stringify({
             model:'claude-sonnet-4-6', max_tokens:300,
             messages:[{role:'user', content: prompt}]
           })
         });
         const data = await resp.json();
+        if(data.error){ throw new Error(data.error.message || JSON.stringify(data.error)); }
         const text = data.content && data.content[0] ? data.content[0].text.trim() : '';
         if(text){
           ta.value = text;
@@ -973,6 +977,7 @@ function bindPlanRow(tr){
         }
       } catch(err){
         console.error('AI gen error:', err);
+        alert('Ошибка генерации: ' + err.message);
       }
       btnEl.textContent='✦ AI'; btnEl.classList.remove('loading'); btnEl.disabled=false;
     });
@@ -1441,7 +1446,7 @@ document.getElementById('aiBtn').addEventListener('click',async function(){
     +(late.length?'\n\nПРОСРОЧЕНО:\n'+late.map(function(t){return '- ['+t.dir+'] '+t.name+' ('+t.due+')';}).join('\n'):'');
   const prompt='Ты опытный маркетинг-аналитик компании BiXBiT (ASIC firmware, AMS платформа, майнинг).\nСоздай структурированный executive summary для руководителя Веры Юркевич на основе данных трекера.\n\n'+summary+'\n\nФОРМАТ ОТЧЁТА:\n1. Краткое резюме (2-3 предложения)\n2. ✅ Ключевые достижения по направлениям\n3. ⚠️ В работе и блокеры\n4. ❌ Перенесено — причины и влияние\n5. 🔴 Просроченные (если есть)\n6. 📌 Топ-5 приоритетов на следующий квартал\n\nПиши по-русски, деловым языком, конкретно, 400-600 слов.';
   try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
     const text=data.content&&data.content[0]?data.content[0].text:'Ошибка: пустой ответ';
     document.getElementById('aiBody').textContent=text;
