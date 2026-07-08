@@ -549,6 +549,19 @@ body.dark .ai-gen-btn:hover{color:#34d399;border-color:#34d399;background:#052e1
 
 <!-- BULK ACTION BAR - injected into plan panel dynamically -->
 
+<!-- PICK DIRECTION FOR NEW TASK MODAL -->
+<div class="modal-bg" id="pickDirModal">
+  <div class="modal">
+    <h3>В какой раздел добавить задачу?</h3>
+    <label>Раздел</label>
+    <select id="pickDirSelect"></select>
+    <div class="modal-btns">
+      <button class="mbtn-cancel" id="pickDirCancel">Отмена</button>
+      <button class="mbtn-ok" id="pickDirOk">Добавить</button>
+    </div>
+  </div>
+</div>
+
 <!-- NEW SECTION MODAL -->
 <div class="modal-bg" id="newDirModal">
   <div class="modal">
@@ -1502,7 +1515,26 @@ document.getElementById('mOk').addEventListener('click',function(){
 
 // ── ADD TASK ───────────────────────────────────────────────────────────────
 document.getElementById('addBtn').addEventListener('click',function(){
-  const dir=planDir==='all'?(periods[pid].tasks[0]?periods[pid].tasks[0].dir:'Сайт'):planDir;
+  if(planDir==='all'){
+    // Ambiguous — ask user which section, instead of guessing (was causing
+    // tasks to silently land in the wrong section, e.g. always 'Сайт').
+    const dirs=[...new Set(periods[pid].tasks.map(function(t){return t.dir;}))];
+    const sel=document.getElementById('pickDirSelect');
+    sel.innerHTML=dirs.map(function(d){return '<option value="'+esc(d)+'">'+esc(d)+'</option>';}).join('');
+    document.getElementById('pickDirModal').classList.add('open');
+    return;
+  }
+  createTaskInDir(planDir);
+});
+document.getElementById('pickDirCancel').addEventListener('click',function(){
+  document.getElementById('pickDirModal').classList.remove('open');
+});
+document.getElementById('pickDirOk').addEventListener('click',function(){
+  const dir=document.getElementById('pickDirSelect').value;
+  document.getElementById('pickDirModal').classList.remove('open');
+  createTaskInDir(dir);
+});
+function createTaskInDir(dir){
   const newTask={id:nextId++,dir:dir,name:'',desc:'',res_plan:'',due:'',agree:'',budget:'',st:'В ожидании',res_actual:'',files:'',comments:''};
   periods[pid].tasks.push(newTask);
   dbSaveTask(newTask,pid);
@@ -1511,7 +1543,7 @@ document.getElementById('addBtn').addEventListener('click',function(){
     const rows=document.querySelectorAll('#planBody tr.dr');
     if(rows.length) rows[rows.length-1].querySelector('.ce-name').focus();
   },50);
-});
+}
 
 // ── NEW SECTION / DIRECTION ──────────────────────────────────────────────
 document.getElementById('addDirBtn').addEventListener('click',function(){
