@@ -442,6 +442,7 @@ body.dark .merge-badge{background:var(--dk-hover);border-color:var(--dk-border);
     <div class="search-row">
       <input class="srch" id="planSearch" placeholder="Поиск по задачам...">
       <button class="add-btn" id="addBtn">＋ Новая задача</button>
+      <button class="add-btn" id="addDirBtn" style="background:#fff;color:var(--blue);border:1.5px solid var(--blue)">＋ Раздел</button>
       <button class="export-btn" id="exportPlan">↓ CSV план</button>
       <button class="ai-btn" id="aiBtn">✦ AI Отчёт</button>
     </div>
@@ -529,6 +530,19 @@ body.dark .merge-badge{background:var(--dk-hover);border-color:var(--dk-border);
 </div>
 
 <!-- BULK ACTION BAR - injected into plan panel dynamically -->
+
+<!-- NEW SECTION MODAL -->
+<div class="modal-bg" id="newDirModal">
+  <div class="modal">
+    <h3>Новый раздел</h3>
+    <label>Название раздела</label>
+    <input id="newDirInp" placeholder="например: Мероприятия, Email-маркетинг...">
+    <div class="modal-btns">
+      <button class="mbtn-cancel" id="newDirCancel">Отмена</button>
+      <button class="mbtn-ok" id="newDirOk">Создать</button>
+    </div>
+  </div>
+</div>
 
 <!-- COLUMN MANAGER MODAL -->
 <div class="modal-bg" id="colMgrModal">
@@ -1395,6 +1409,40 @@ document.getElementById('addBtn').addEventListener('click',function(){
     const rows=document.querySelectorAll('#planBody tr.dr');
     if(rows.length) rows[rows.length-1].querySelector('.ce-name').focus();
   },50);
+});
+
+// ── NEW SECTION / DIRECTION ──────────────────────────────────────────────
+document.getElementById('addDirBtn').addEventListener('click',function(){
+  document.getElementById('newDirInp').value='';
+  document.getElementById('newDirModal').classList.add('open');
+  setTimeout(function(){ document.getElementById('newDirInp').focus(); }, 100);
+});
+document.getElementById('newDirCancel').addEventListener('click',function(){
+  document.getElementById('newDirModal').classList.remove('open');
+});
+document.getElementById('newDirOk').addEventListener('click',function(){
+  const name = document.getElementById('newDirInp').value.trim();
+  if(!name){ document.getElementById('newDirInp').focus(); return; }
+  // Check if already exists
+  const existing = [...new Set(periods[pid].tasks.map(t=>t.dir))];
+  if(existing.includes(name)){
+    alert('Раздел «'+name+'» уже существует');
+    return;
+  }
+  // Create first empty task in this new section
+  const newTask={id:nextId++,dir:name,name:'',desc:'',res_plan:'',due:'',agree:'',budget:'',st:'В ожидании',res_actual:'',files:'',comments:''};
+  periods[pid].tasks.push(newTask);
+  dbSaveTask(newTask,pid);
+  document.getElementById('newDirModal').classList.remove('open');
+  planDir=name; renderAll();
+  setTimeout(function(){
+    const rows=document.querySelectorAll('#planBody tr.dr');
+    if(rows.length) rows[rows.length-1].querySelector('.ce-name').focus();
+  },80);
+});
+document.getElementById('newDirInp').addEventListener('keydown',function(e){
+  if(e.key==='Enter') document.getElementById('newDirOk').click();
+  if(e.key==='Escape') document.getElementById('newDirCancel').click();
 });
 
 // ── TABS & SEARCH ──────────────────────────────────────────────────────────
