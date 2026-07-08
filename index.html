@@ -376,20 +376,6 @@ body.dark .merge-badge{background:var(--dk-hover);border-color:var(--dk-border);
 #panel-plan .fi{font-size:12px}
 #panel-plan .dir-sel{font-size:11px!important}
 
-/* ── AI GENERATE BUTTON IN CELL ─────────────────────────────────────── */
-.cell-wrap{position:relative;display:flex;flex-direction:column;gap:3px}
-.ai-gen-btn{
-  align-self:flex-start;
-  background:none;border:1px solid var(--gray100);cursor:pointer;
-  font-size:10px;color:var(--gray400);padding:2px 7px;border-radius:4px;
-  line-height:1.4;font-family:inherit;white-space:nowrap;
-  transition:all .12s;
-}
-.ai-gen-btn:hover{color:var(--mag);border-color:var(--mag);background:#fff5fa}
-body.dark .ai-gen-btn{border-color:var(--dk-border);color:var(--dk-text3);background:transparent}
-body.dark .ai-gen-btn:hover{color:#E8508A;border-color:#E8508A;background:#1a0810}
-.ai-gen-btn.loading{color:var(--blue);border-color:var(--blue);opacity:.7;cursor:not-allowed}
-body.dark .ai-gen-btn.loading{color:var(--dk-accent);border-color:var(--dk-accent)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -431,7 +417,6 @@ body.dark .ai-gen-btn.loading{color:var(--dk-accent);border-color:var(--dk-accen
       </div>
       <button class="theme-btn" id="themeBtn">🌙 Тёмная</button>
       <button class="theme-btn" id="logoutBtn" title="Выйти из аккаунта">⏻ Выйти</button>
-      <button class="theme-btn" id="aiKeyBtn" title="Настроить AI ключ">🔑 AI ключ</button>
     </div>
     <div class="kpi-row">
       <div class="kpi"><div class="kpi-lbl">Всего задач</div><div class="kpi-val" id="kTotal" style="font-family:'Fira Code',monospace">—</div><div class="kpi-sub">в периоде</div></div>
@@ -889,8 +874,8 @@ function planRowHTML(t){
     +(isPrimary?'<span class="merge-badge" data-merge-id="'+t.id+'" title="Нажми чтобы разъединить">⊞ '+mergedCount+' строки объединены ✕</span>':'')
     +'<select class="dir-sel" style="font-size:10px;margin-top:3px;padding:2px 5px;border:1px solid #E6E6E6;border-radius:4px;background:#fff;width:100%;outline:none;cursor:pointer">'+dirOpts+'</select>'
     +'</td>'
-    +'<td><div class="cell-wrap"><textarea class="ce" data-f="desc" rows="2" placeholder="Описание...">'+esc(t.desc)+'</textarea><button class="ai-gen-btn" data-field="desc" data-id="'+t.id+'" title="Сгенерировать описание">✦ AI</button></div></td>'
-    +'<td><div class="cell-wrap"><textarea class="ce" data-f="res_plan" rows="2" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea><button class="ai-gen-btn" data-field="res_plan" data-id="'+t.id+'" title="Сгенерировать плановый результат">✦ AI</button></div></td>'
+    +'<td><textarea class="ce" data-f="desc" rows="2" placeholder="Описание...">'+esc(t.desc)+'</textarea></td>'
+    +'<td><textarea class="ce" data-f="res_plan" rows="2" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea></td>'
     +'<td><select class="sst '+sc+'" data-f="st">'+buildOpts(t.st)+'</select></td>'
     +'<td><input class="ce" type="text" data-f="agree" value="'+esc(t.agree)+'" placeholder="Согласование..."></td>'
     +'<td><input class="ce" type="text" data-f="budget" value="'+esc(t.budget)+'" placeholder="Бюджет..."></td>'
@@ -936,61 +921,7 @@ function bindPlanRow(tr){
     var idx=periods[pid].tasks.findIndex(function(t){return t.id===id;});
     if(idx>-1){periods[pid].tasks.splice(idx,1);dbDeleteTask(id);renderAll();}
   });
-  // AI generate buttons
-  tr.querySelectorAll('.ai-gen-btn').forEach(function(btn){
-    btn.addEventListener('click', async function(e){
-      e.stopPropagation();
-      const field = this.dataset.field;
-      const t = task();
-      if(!t) return;
-      if(!t.name || t.name.trim().length < 3){
-        alert('Сначала введи название задачи'); return;
-      }
-      // Check API key
-      if(!getAnthropicKey()){
-        const k = prompt('Введи Anthropic API ключ (sk-ant-...):\nОн сохранится в браузере и больше не понадобится.');
-        if(!k || !k.startsWith('sk-ant')){ return; }
-        setAnthropicKey(k.trim());
-      }
-      this.textContent='↻ генерирую...'; this.classList.add('loading'); this.disabled=true;
-      const btnEl = this;
-      // Find textarea in same cell-wrap
-      const ta = this.parentNode.querySelector('textarea');
-      const isDesc = field === 'desc';
-      const prompt = isDesc
-        ? 'Ты маркетинг-аналитик BiXBiT (ASIC firmware, AMS платформа, майнинг). Напиши краткое описание задачи (2-3 предложения, деловой стиль, без воды) для задачи: «'+t.name+'». Направление: '+t.dir+'. Только текст описания, без заголовков.'
-        : 'Ты маркетинг-аналитик BiXBiT (ASIC firmware, AMS платформа, майнинг). Напиши плановый результат (конкретные метрики и ожидаемые итоги, 2-4 пункта) для задачи: «'+t.name+'». Описание: '+(t.desc||'не указано')+'. Только текст результата, без заголовков.';
-      try {
-        const resp = await fetch('https://api.anthropic.com/v1/messages',{
-          method:'POST',
-          headers:{
-            'Content-Type':'application/json',
-            'x-api-key': getAnthropicKey(),
-            'anthropic-version':'2023-06-01',
-            'anthropic-dangerous-direct-browser-access':'true'
-          },
-          body: JSON.stringify({
-            model:'claude-sonnet-4-6', max_tokens:300,
-            messages:[{role:'user', content: prompt}]
-          })
-        });
-        const data = await resp.json();
-        if(data.error){ throw new Error(data.error.message || JSON.stringify(data.error)); }
-        const text = data.content && data.content[0] ? data.content[0].text.trim() : '';
-        if(text){
-          ta.value = text;
-          t[field] = text;
-          autoH(ta);
-          debounceSave(id, pid);
-          if(field==='res_plan') syncRepRow(id);
-        }
-      } catch(err){
-        console.error('AI gen error:', err);
-        alert('Ошибка генерации: ' + err.message);
-      }
-      btnEl.textContent='✦ AI'; btnEl.classList.remove('loading'); btnEl.disabled=false;
-    });
-  });
+
   // bind multi-link file cell
   var flWrap=tr.querySelector('.fl-wrap');
   if(flWrap){
@@ -1455,7 +1386,7 @@ document.getElementById('aiBtn').addEventListener('click',async function(){
     +(late.length?'\n\nПРОСРОЧЕНО:\n'+late.map(function(t){return '- ['+t.dir+'] '+t.name+' ('+t.due+')';}).join('\n'):'');
   const prompt='Ты опытный маркетинг-аналитик компании BiXBiT (ASIC firmware, AMS платформа, майнинг).\nСоздай структурированный executive summary для руководителя Веры Юркевич на основе данных трекера.\n\n'+summary+'\n\nФОРМАТ ОТЧЁТА:\n1. Краткое резюме (2-3 предложения)\n2. ✅ Ключевые достижения по направлениям\n3. ⚠️ В работе и блокеры\n4. ❌ Перенесено — причины и влияние\n5. 🔴 Просроченные (если есть)\n6. 📌 Топ-5 приоритетов на следующий квартал\n\nПиши по-русски, деловым языком, конкретно, 400-600 слов.';
   try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':getAnthropicKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
     const text=data.content&&data.content[0]?data.content[0].text:'Ошибка: пустой ответ';
     document.getElementById('aiBody').textContent=text;
@@ -1671,9 +1602,7 @@ function renderAll(){
 // ── SUPABASE CONFIG ─────────────────────────────────────────────────────
 const SUPA_URL = 'https://pgafsuwvdfdbloyjdspv.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnYWZzdXd2ZGZkYmxveWpkc3B2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTU5MjMsImV4cCI6MjA5ODA3MTkyM30.NBBF-C5NzmvjTD1AvruMlvEn--plwLgHtphC43GgsIw';
-// Anthropic API key stored in localStorage (never in code/git)
-function getAnthropicKey(){ return localStorage.getItem('bixbit_ai_key') || ''; }
-function setAnthropicKey(k){ localStorage.setItem('bixbit_ai_key', k); }
+
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // ── LOADING OVERLAY ──────────────────────────────────────────────────────
@@ -1811,15 +1740,7 @@ document.getElementById('logoutBtn').addEventListener('click',async function(){
   await supa.auth.signOut();
   showLogin();
 });
-document.getElementById('aiKeyBtn').addEventListener('click',function(){
-  const cur = getAnthropicKey();
-  const k = prompt('Anthropic API ключ:\n(оставь пустым чтобы сбросить)', cur);
-  if(k === null) return; // cancelled
-  if(k.trim() === ''){ localStorage.removeItem('bixbit_ai_key'); alert('Ключ удалён'); return; }
-  if(!k.trim().startsWith('sk-ant')){ alert('Неверный формат ключа — должен начинаться с sk-ant'); return; }
-  setAnthropicKey(k.trim());
-  alert('✓ Ключ сохранён в браузере');
-});
+
 document.getElementById('loginPass').addEventListener('keydown',function(e){ if(e.key==='Enter') doLogin(); });
 document.getElementById('loginEmail').addEventListener('keydown',function(e){ if(e.key==='Enter') document.getElementById('loginPass').focus(); });
 
