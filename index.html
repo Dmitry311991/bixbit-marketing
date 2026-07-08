@@ -1152,9 +1152,10 @@ function renderPlanTable(){
     });
     document.getElementById('bulkPeriodBtn').addEventListener('click',function(){
       const targetPid=document.getElementById('bulkPeriodSel').value;
-      if(!targetPid || targetPid===pid) return;
+      if(!targetPid){ alert('Выбери период из списка «→ Копировать в...»'); return; }
+      if(targetPid===pid){ alert('Это текущий период — выбери другой'); return; }
       const target=periods[targetPid];
-      if(!target) return;
+      if(!target){ alert('Период не найден'); return; }
       const idsToCopy=[...selectedIds];
       const copied=[];
       idsToCopy.forEach(function(id){
@@ -1550,7 +1551,8 @@ document.getElementById('addBtn').addEventListener('click',function(){
     // tasks to silently land in the wrong section, e.g. always 'Сайт').
     const dirs=[...new Set(periods[pid].tasks.map(function(t){return t.dir;}))];
     const sel=document.getElementById('pickDirSelect');
-    sel.innerHTML=dirs.map(function(d){return '<option value="'+esc(d)+'">'+esc(d)+'</option>';}).join('');
+    sel.innerHTML='<option value="" selected disabled>— выбери раздел —</option>'
+      + dirs.map(function(d){return '<option value="'+esc(d)+'">'+esc(d)+'</option>';}).join('');
     document.getElementById('pickDirModal').classList.add('open');
     return;
   }
@@ -1561,6 +1563,7 @@ document.getElementById('pickDirCancel').addEventListener('click',function(){
 });
 document.getElementById('pickDirOk').addEventListener('click',function(){
   const dir=document.getElementById('pickDirSelect').value;
+  if(!dir){ alert('Выбери раздел из списка'); return; }
   document.getElementById('pickDirModal').classList.remove('open');
   createTaskInDir(dir);
 });
