@@ -1749,6 +1749,15 @@ async function initFromDB() {
           res_actual: t.res_actual, files: t.files, comments: t.comments });
       });
       pid = Object.keys(periods)[0];
+      // Critical fix: recompute nextId from actual data to avoid ID collisions
+      // across sessions (was hardcoded to 5000 every load, causing tasks
+      // with the same id to silently overwrite each other in Supabase,
+      // which looked like tasks disappearing or jumping to other sections).
+      let maxId = 5999;
+      Object.values(periods).forEach(function(p){
+        p.tasks.forEach(function(t){ if(t.id > maxId) maxId = t.id; });
+      });
+      nextId = maxId + 1;
       hideLoader();
       renderAll();
       setTimeout(function(){ autoHAll(document); }, 400);
