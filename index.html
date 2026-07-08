@@ -112,6 +112,7 @@ body.dark .dp-hdr{border-bottom-color:var(--dk-border)}
 body.dark .dp-name{color:var(--dk-text)}
 body.dark .dp-lbl{color:var(--dk-text3)}
 body.dark .dp-val{color:var(--dk-text2)}
+body.dark #dpDue{background:var(--dk-input-bg);border-color:var(--dk-border);color:var(--dk-text);color-scheme:dark}
 body.dark .dp-hr{background:var(--dk-border2)}
 body.dark .dp-close:hover{color:var(--dk-text);background:var(--dk-surface2)}
 
@@ -643,7 +644,7 @@ body.dark .ai-gen-btn:hover{color:#34d399;border-color:#34d399;background:#052e1
     <div class="dp-hr"></div>
     <div class="dp-field"><div class="dp-lbl">Согласование</div><div class="dp-val" id="dpAgree"></div></div>
     <div class="dp-field"><div class="dp-lbl">Бюджет</div><div class="dp-val" id="dpBudget"></div></div>
-    <div class="dp-field"><div class="dp-lbl">Срок</div><div class="dp-val" id="dpDue"></div></div>
+    <div class="dp-field"><div class="dp-lbl">Срок</div><input type="date" id="dpDue" style="font-size:12px;padding:6px 8px;border:1px solid var(--gray100);border-radius:6px;font-family:inherit;background:#fff;color:#000;outline:none"></div>
     <div class="dp-field"><div class="dp-lbl">Файлы</div><div class="dp-val" id="dpFiles"></div></div>
     <div class="dp-field"><div class="dp-lbl">Комментарии</div><div class="dp-val" id="dpComments" style="color:#9F9B9D;font-style:italic">—</div></div>
     <div class="dp-hr"></div>
@@ -1696,7 +1697,20 @@ function openDetail(id){
   ra.textContent=t.res_actual||'—'; ra.style.fontStyle=t.res_actual?'normal':'italic';
   document.getElementById('dpAgree').textContent=t.agree||'—';
   document.getElementById('dpBudget').textContent=t.budget||'—';
-  document.getElementById('dpDue').textContent=t.due||'—';
+  const dueInp=document.getElementById('dpDue');
+  const parsedDue=parseDeadline(t.due);
+  dueInp.value = parsedDue ? parsedDue.toISOString().slice(0,10) : '';
+  const newDueInp=dueInp.cloneNode(true); dueInp.replaceWith(newDueInp); // clear old listeners
+  newDueInp.value = parsedDue ? parsedDue.toISOString().slice(0,10) : '';
+  newDueInp.addEventListener('change',function(){
+    const task=periods[pid].tasks.find(function(x){return x.id===detailId;});
+    if(!task) return;
+    const oldDue=task.due;
+    task.due=this.value; // stored as yyyy-mm-dd, parseDeadline supports this format
+    debounceSave(detailId,pid);
+    logHistory(detailId,pid,'Срок',oldDue,this.value);
+    updateKPI(); renderPlanTable(); renderRepTable();
+  });
   const fv=document.getElementById('dpFiles');
   fv.innerHTML=t.files?'<a href="'+esc(t.files)+'" target="_blank" style="color:#0040DD">'+esc(t.files.slice(0,60))+(t.files.length>60?'…':'')+' ↗</a>':'—';
   const cm=document.getElementById('dpComments');
