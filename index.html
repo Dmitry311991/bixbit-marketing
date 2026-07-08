@@ -375,6 +375,21 @@ body.dark .merge-badge{background:var(--dk-hover);border-color:var(--dk-border);
 #panel-report .sec-row td,#panel-plan .sec-row td{font-size:11px}
 #panel-plan .fi{font-size:12px}
 #panel-plan .dir-sel{font-size:11px!important}
+
+/* ── AI GENERATE BUTTON IN CELL ─────────────────────────────────────── */
+.cell-wrap{position:relative}
+.ai-gen-btn{
+  position:absolute;top:3px;right:3px;
+  background:none;border:none;cursor:pointer;
+  font-size:11px;color:#C0BDC0;padding:1px 4px;border-radius:3px;
+  line-height:1;opacity:0;transition:opacity .15s;
+  z-index:1;
+}
+.cell-wrap:hover .ai-gen-btn{opacity:1}
+.ai-gen-btn:hover{color:var(--mag);background:#fce8f3}
+body.dark .ai-gen-btn:hover{color:var(--dk-mag, #E8508A);background:#2a0d1a}
+.ai-gen-btn.loading{color:var(--blue);animation:spin .6s linear infinite;opacity:1}
+body.dark .ai-gen-btn.loading{color:var(--dk-accent)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -873,8 +888,8 @@ function planRowHTML(t){
     +(isPrimary?'<span class="merge-badge" data-merge-id="'+t.id+'" title="Нажми чтобы разъединить">⊞ '+mergedCount+' строки объединены ✕</span>':'')
     +'<select class="dir-sel" style="font-size:10px;margin-top:3px;padding:2px 5px;border:1px solid #E6E6E6;border-radius:4px;background:#fff;width:100%;outline:none;cursor:pointer">'+dirOpts+'</select>'
     +'</td>'
-    +'<td><textarea class="ce" data-f="desc" rows="2" placeholder="Описание...">'+esc(t.desc)+'</textarea></td>'
-    +'<td><textarea class="ce" data-f="res_plan" rows="2" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea></td>'
+    +'<td><div class="cell-wrap"><textarea class="ce" data-f="desc" rows="2" placeholder="Описание...">'+esc(t.desc)+'</textarea><button class="ai-gen-btn" data-field="desc" data-id="'+t.id+'" title="Сгенерировать описание">✦</button></div></td>'
+    +'<td><div class="cell-wrap"><textarea class="ce" data-f="res_plan" rows="2" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea><button class="ai-gen-btn" data-field="res_plan" data-id="'+t.id+'" title="Сгенерировать плановый результат">✦</button></div></td>'
     +'<td><select class="sst '+sc+'" data-f="st">'+buildOpts(t.st)+'</select></td>'
     +'<td><input class="ce" type="text" data-f="agree" value="'+esc(t.agree)+'" placeholder="Согласование..."></td>'
     +'<td><input class="ce" type="text" data-f="budget" value="'+esc(t.budget)+'" placeholder="Бюджет..."></td>'
@@ -919,6 +934,48 @@ function bindPlanRow(tr){
   tr.querySelector('.del').addEventListener('click',function(){
     var idx=periods[pid].tasks.findIndex(function(t){return t.id===id;});
     if(idx>-1){periods[pid].tasks.splice(idx,1);dbDeleteTask(id);renderAll();}
+  });
+  // AI generate buttons
+  tr.querySelectorAll('.ai-gen-btn').forEach(function(btn){
+    btn.addEventListener('click', async function(e){
+      e.stopPropagation();
+      const field = this.dataset.field;
+      const t = task();
+      if(!t) return;
+      if(!t.name || t.name.trim().length < 3){
+        alert('Сначала введи название задачи'); return;
+      }
+      this.textContent='↻'; this.classList.add('loading');
+      const btnEl = this;
+      // Find textarea in same cell-wrap
+      const ta = this.parentNode.querySelector('textarea');
+      const isDesc = field === 'desc';
+      const prompt = isDesc
+        ? 'Ты маркетинг-аналитик BiXBiT (ASIC firmware, AMS платформа, майнинг). Напиши краткое описание задачи (2-3 предложения, деловой стиль, без воды) для задачи: «'+t.name+'». Направление: '+t.dir+'. Только текст описания, без заголовков.'
+        : 'Ты маркетинг-аналитик BiXBiT (ASIC firmware, AMS платформа, майнинг). Напиши плановый результат (конкретные метрики и ожидаемые итоги, 2-4 пункта) для задачи: «'+t.name+'». Описание: '+(t.desc||'не указано')+'. Только текст результата, без заголовков.';
+      try {
+        const resp = await fetch('https://api.anthropic.com/v1/messages',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            model:'claude-sonnet-4-6', max_tokens:300,
+            messages:[{role:'user', content: prompt}]
+          })
+        });
+        const data = await resp.json();
+        const text = data.content && data.content[0] ? data.content[0].text.trim() : '';
+        if(text){
+          ta.value = text;
+          t[field] = text;
+          autoH(ta);
+          debounceSave(id, pid);
+          if(field==='res_plan') syncRepRow(id);
+        }
+      } catch(err){
+        console.error('AI gen error:', err);
+      }
+      btnEl.textContent='✦'; btnEl.classList.remove('loading');
+    });
   });
   // bind multi-link file cell
   var flWrap=tr.querySelector('.fl-wrap');
