@@ -72,6 +72,14 @@ body.dark .fi:focus{background:var(--dk-input-hl);border-color:var(--dk-accent)}
 body.dark .fi::placeholder{color:var(--dk-text3)}
 
 body.dark select.dir-sel{background:var(--dk-input-bg);border-color:var(--dk-border);color:var(--dk-text2)}
+.prio-sel{font-size:11px;padding:4px 4px;border-radius:5px;border:1px solid var(--gray100);background:#fff;cursor:pointer;outline:none;width:100%;text-align:center}
+.prio-sel.prio-high{background:#fef1f1;border-color:#f0aaaa}
+.prio-sel.prio-med{background:#fef9ec;border-color:#f0d080}
+.prio-sel.prio-low{background:#e8f7f0;border-color:#a8dfc4}
+body.dark .prio-sel{background:var(--dk-surface2);border-color:var(--dk-border);color:var(--dk-text2)}
+body.dark .prio-sel.prio-high{background:#350a0a;border-color:#601010}
+body.dark .prio-sel.prio-med{background:#302000;border-color:#604800}
+body.dark .prio-sel.prio-low{background:#0d2e1c;border-color:#1a5c3a}
 body.dark .sst.s-done  {background:#0d2e1c;color:#4cd97b;border-color:#1a5c3a}
 body.dark .sst.s-prog  {background:#0d2040;color:#6aacff;border-color:#1a4080}
 body.dark .sst.s-wait  {background:#302000;color:#ffc040;border-color:#604800}
@@ -115,6 +123,10 @@ body.dark .ai-ftr{border-top-color:var(--dk-border)}
 
 tr.dr.overdue td{background:#fff5f5!important}
 body.dark tr.dr.overdue td{background:#2D1010!important}
+tr.dr.due-soon td{background:#fffaf0!important}
+body.dark tr.dr.due-soon td{background:#302a10!important}
+tr.dr.due-soon:hover td{background:#fff2dc!important}
+body.dark tr.dr.due-soon:hover td{background:#3d3312!important}
 body.dark tr.dr.overdue:hover td{background:#3D1515!important}
 
 .hdr{background:var(--mag);position:relative;overflow:hidden}
@@ -319,6 +331,14 @@ tr.dr.drag-over td{border-top:2px solid var(--blue)!important}
 .col-mgr-btn:hover{border-color:var(--blue);color:var(--blue)}
 body.dark .col-mgr-btn{border-color:var(--dk-border);color:var(--dk-text3)}
 body.dark .col-mgr-btn:hover{border-color:var(--dk-accent);color:var(--dk-accent)}
+.gs-item{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border:1px solid var(--gray100);border-radius:8px;cursor:pointer;transition:all .12s}
+.gs-item:hover{border-color:var(--blue);background:#EEF3FF}
+.gs-item-name{font-size:12px;font-weight:600;color:#000}
+.gs-item-meta{font-size:10px;color:var(--gray400)}
+body.dark .gs-item{border-color:var(--dk-border)}
+body.dark .gs-item:hover{border-color:var(--dk-accent);background:var(--dk-hover)}
+body.dark .gs-item-name{color:var(--dk-text)}
+body.dark .gs-item-meta{color:var(--dk-text3)}
 .col-modal{background:#fff;border-radius:12px;padding:24px;width:380px;box-shadow:0 8px 40px rgba(0,0,0,.2)}
 body.dark .col-modal{background:var(--dk-surface)}
 .col-modal h3{font-size:14px;font-weight:700;margin-bottom:14px;color:#000}
@@ -454,11 +474,21 @@ body.dark .ai-gen-btn:hover{color:#34d399;border-color:#34d399;background:#052e1
   <div class="period-bar">
     <div id="perBtns"></div>
     <button class="new-per-btn" id="newPerBtn">＋ Новый период</button>
+    <button class="new-per-btn" id="globalSearchBtn" style="border-style:solid;border-color:var(--blue);color:var(--blue)">🔎 Искать везде</button>
     <span class="period-name" id="planPeriodName"></span>
   </div>
   <div class="filter-bar">
     <div class="search-row">
       <input class="srch" id="planSearch" placeholder="Поиск по задачам...">
+      <select id="planSortSel" class="col-mgr-btn" style="cursor:pointer;border-style:solid">
+        <option value="">↕ Без сортировки</option>
+        <option value="name-asc">Название А→Я</option>
+        <option value="name-desc">Название Я→А</option>
+        <option value="due-asc">Срок: ближе → дальше</option>
+        <option value="due-desc">Срок: дальше → ближе</option>
+        <option value="st-asc">Статус А→Я</option>
+        <option value="priority-asc">Приоритет: высокий → низкий</option>
+      </select>
       <button class="add-btn" id="addBtn">＋ Новая задача</button>
       <button class="add-btn" id="addDirBtn" style="background:#fff;color:var(--blue);border:1.5px solid var(--blue)">＋ Раздел</button>
       <button class="export-btn" id="exportPlan">↓ CSV план</button>
@@ -468,8 +498,8 @@ body.dark .ai-gen-btn:hover{color:#34d399;border-color:#34d399;background:#052e1
   </div>
   <div class="tbl-wrap">
     <table>
-      <colgroup id="planColgroup"><col style="width:36px"><col style="width:15%"><col style="width:17%"><col style="width:15%"><col style="width:10%"><col style="width:9%"><col style="width:8%"><col style="width:10%"><col style="width:9%"><col style="width:40px"></colgroup>
-      <thead id="planThead"><tr><th style="width:36px;text-align:center;padding:8px 4px"><input type="checkbox" id="selectAllCb" title="Выбрать все" style="width:14px;height:14px;cursor:pointer;accent-color:#0040DD"></th><th>Задача</th><th>Описание</th><th>Плановый результат</th><th>Статус</th><th>Согласование</th><th>Бюджет</th><th>Файлы</th><th>Комментарии</th><th></th></tr></thead>
+      <colgroup id="planColgroup"><col style="width:36px"><col style="width:15%"><col style="width:6%"><col style="width:16%"><col style="width:14%"><col style="width:10%"><col style="width:9%"><col style="width:8%"><col style="width:10%"><col style="width:9%"><col style="width:40px"></colgroup>
+      <thead id="planThead"><tr><th style="width:36px;text-align:center;padding:8px 4px"><input type="checkbox" id="selectAllCb" title="Выбрать все" style="width:14px;height:14px;cursor:pointer;accent-color:#0040DD"></th><th>Задача</th><th>Приоритет</th><th>Описание</th><th>Плановый результат</th><th>Статус</th><th>Согласование</th><th>Бюджет</th><th>Файлы</th><th>Комментарии</th><th></th></tr></thead>
       <tbody id="planBody"></tbody>
     </table>
   </div>
@@ -548,6 +578,18 @@ body.dark .ai-gen-btn:hover{color:#34d399;border-color:#34d399;background:#052e1
 </div>
 
 <!-- BULK ACTION BAR - injected into plan panel dynamically -->
+
+<!-- GLOBAL SEARCH MODAL -->
+<div class="modal-bg" id="globalSearchModal">
+  <div class="modal" style="width:560px;max-height:80vh;display:flex;flex-direction:column">
+    <h3>Поиск по всем периодам</h3>
+    <input id="globalSearchInp" placeholder="Введи название задачи..." style="margin-bottom:12px">
+    <div id="globalSearchResults" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px"></div>
+    <div class="modal-btns">
+      <button class="mbtn-cancel" id="globalSearchClose">Закрыть</button>
+    </div>
+  </div>
+</div>
 
 <!-- PICK DIRECTION FOR NEW TASK MODAL -->
 <div class="modal-bg" id="pickDirModal">
@@ -633,6 +675,7 @@ let nextId=5000;
 // ── CUSTOM COLUMNS ────────────────────────────────────────────────────────
 // Each period can have extra columns beyond the defaults
 const DEFAULT_COLS = [
+  {key:'priority', label:'Приоритет',          visible:true,  fixed:true},
   {key:'desc',    label:'Описание',          visible:true,  fixed:true},
   {key:'res_plan',label:'Плановый результат',visible:true,  fixed:true},
   {key:'st',      label:'Статус',            visible:true,  fixed:true},
@@ -666,6 +709,8 @@ DEFAULT_COLS.forEach(col => colVisibility[col.key] = true);
 
 // ── SELECTION STATE ───────────────────────────────────────────────────────
 let selectedIds = new Set();
+let sortField = null; // 'name' | 'due' | 'st' | 'priority' | null
+let sortDir = 'asc';
 
 function updateBulkBar(){
   const bar = document.getElementById('bulkBar');
@@ -805,10 +850,17 @@ function updateKPI(){
   document.getElementById('kWait').textContent='ожидание: '+wait;
   document.getElementById('kMoved').textContent=moved;
   document.getElementById('hdrPeriod').textContent=periods[pid].code;
-  // overdue
+  // overdue + due soon (upcoming deadline within 3 days)
   const now=new Date(); now.setHours(0,0,0,0);
+  const soon=new Date(now); soon.setDate(soon.getDate()+3);
   let over=0;
-  tasks.forEach(t=>{const d=parseDeadline(t.due);t._late=d&&d<now&&t.st!=='Выполнено'&&t.st!=='Перенесено';if(t._late)over++;});
+  tasks.forEach(t=>{
+    const d=parseDeadline(t.due);
+    const notDone=t.st!=='Выполнено'&&t.st!=='Перенесено';
+    t._late=!!(d&&d<now&&notDone);
+    t._soon=!!(d&&d>=now&&d<=soon&&notDone);
+    if(t._late)over++;
+  });
   const ob=document.getElementById('kOverdueKpi'), mb=document.getElementById('kMovedKpi');
   if(over>0){ob.style.display='';mb.style.display='none';document.getElementById('kOverdue').textContent=over;}
   else{ob.style.display='none';mb.style.display='';}
@@ -901,18 +953,24 @@ function planRowHTML(t){
     return '<td><textarea class="ce" data-f="'+col.key+'" rows="1" placeholder="'+col.label+'...">'+val+'</textarea></td>';
   }).join('');
   if(isHidden) return '<tr class="dr merged-hidden" data-id="'+t.id+'"></tr>';
-  return '<tr class="dr'+(t._late?' overdue':'')+(isSel?' selected':'')+(isPrimary?' merged-primary':'')+'" data-id="'+t.id+'" draggable="true">'
+  return '<tr class="dr'+(t._late?' overdue':'')+(!t._late&&t._soon?' due-soon':'')+(isSel?' selected':'')+(isPrimary?' merged-primary':'')+'" data-id="'+t.id+'" draggable="true">'
     +'<td class="cb-cell" style="width:36px;text-align:center;vertical-align:middle"><input type="checkbox" class="row-cb"'+(isSel?' checked':'')+' style="width:14px;height:14px;cursor:pointer;accent-color:#0040DD"></td>'
     +'<td><span class="drag-handle" title="Перетащить строку">⠿</span><button class="del" title="Удалить">✕</button>'
     +'<textarea class="ce-name" data-f="name" rows="1" placeholder="Новая задача...">'+esc(t.name)+'</textarea>'
     +(isPrimary?'<span class="merge-badge" data-merge-id="'+t.id+'" title="Нажми чтобы разъединить">⊞ '+mergedCount+' строки объединены ✕</span>':'')
     +'<select class="dir-sel" style="font-size:10px;margin-top:3px;padding:2px 5px;border:1px solid #E6E6E6;border-radius:4px;background:#fff;width:100%;outline:none;cursor:pointer">'+dirOpts+'</select>'
     +'</td>'
+    +'<td><select class="prio-sel prio-'+(t.priority||'none')+'" data-f="priority">'
+      +'<option value=""'+(!t.priority?' selected':'')+'>—</option>'
+      +'<option value="high"'+(t.priority==='high'?' selected':'')+'>🔴 Высокий</option>'
+      +'<option value="med"'+(t.priority==='med'?' selected':'')+'>🟡 Средний</option>'
+      +'<option value="low"'+(t.priority==='low'?' selected':'')+'>🟢 Низкий</option>'
+      +'</select></td>'
     +'<td><div class="cell-wrap"><textarea class="ce" data-f="desc" rows="2" placeholder="Описание...">'+esc(t.desc)+'</textarea><button class="ai-gen-btn" data-field="desc" data-taskid="'+t.id+'" title="Сгенерировать через ChatGPT">✦ GPT</button></div></td>'
     +'<td><div class="cell-wrap"><textarea class="ce" data-f="res_plan" rows="2" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea><button class="ai-gen-btn" data-field="res_plan" data-taskid="'+t.id+'" title="Сгенерировать через ChatGPT">✦ GPT</button></div></td>'
     +'<td><select class="sst '+sc+'" data-f="st">'+buildOpts(t.st)+'</select></td>'
-    +'<td><input class="ce" type="text" data-f="agree" value="'+esc(t.agree)+'" placeholder="Согласование..."></td>'
-    +'<td><input class="ce" type="text" data-f="budget" value="'+esc(t.budget)+'" placeholder="Бюджет..."></td>'
+    +'<td><textarea class="ce" data-f="agree" rows="1" placeholder="Согласование...">'+esc(t.agree)+'</textarea></td>'
+    +'<td><textarea class="ce" data-f="budget" rows="1" placeholder="Бюджет...">'+esc(t.budget)+'</textarea></td>'
     +'<td>'+fileCell+'</td>'
     +'<td><textarea class="ce" data-f="comments" rows="2" placeholder="Комментарии...">'+esc(t.comments)+'</textarea></td>'
     +extraCells
@@ -953,6 +1011,14 @@ function bindPlanRow(tr){
     debounceSave(id,pid);
     renderPlanTable();renderRepTable();
   });
+  var prioSel=tr.querySelector('select.prio-sel');
+  if(prioSel){
+    prioSel.addEventListener('change',function(){
+      var t=task();if(t)t.priority=this.value;
+      this.className='prio-sel prio-'+(this.value||'none');
+      debounceSave(id,pid);
+    });
+  }
   tr.querySelector('.del').addEventListener('click',function(){
     var idx=periods[pid].tasks.findIndex(function(t){return t.id===id;});
     if(idx>-1){periods[pid].tasks.splice(idx,1);dbDeleteTask(id);renderAll();}
@@ -1072,6 +1138,10 @@ function bindPlanRow(tr){
   });
 }
 
+function sortArrow(field){
+  if(sortField!==field) return '';
+  return sortDir==='asc' ? ' ▲' : ' ▼';
+}
 function buildPlanHeader(){
   const activeCols = getActiveCols();
   const baseColspan = 2 + activeCols.length + 1;
@@ -1079,15 +1149,23 @@ function buildPlanHeader(){
   let cg='<col style="width:36px">';
   cg+='<col style="width:15%">';
   activeCols.forEach(function(col){
-    const w={desc:'17%',res_plan:'15%',st:'10%',agree:'9%',budget:'8%',files:'10%',comments:'9%'}[col.key]||'10%';
+    const w={priority:'6%',desc:'16%',res_plan:'14%',st:'10%',agree:'9%',budget:'8%',files:'10%',comments:'9%'}[col.key]||'10%';
     cg+='<col style="width:'+w+'">';
   });
   cg+='<col style="width:40px">';
   // thead
   let th='<tr>'
     +'<th style="width:36px;text-align:center;padding:8px 4px"><input type="checkbox" id="selectAllCb" title="Выбрать все" style="width:14px;height:14px;cursor:pointer;accent-color:#0040DD"></th>'
-    +'<th>Задача</th>';
-  activeCols.forEach(function(col){ th+='<th>'+col.label+'</th>'; });
+    +'<th class="sortable-th" data-sort="name" style="cursor:pointer" title="Сортировать по названию">Задача'+sortArrow('name')+'</th>';
+  activeCols.forEach(function(col){
+    if(col.key==='st'){
+      th+='<th class="sortable-th" data-sort="st" style="cursor:pointer" title="Сортировать по статусу">'+col.label+sortArrow('st')+'</th>';
+    } else if(col.key==='priority'){
+      th+='<th class="sortable-th" data-sort="priority" style="cursor:pointer" title="Сортировать по приоритету">'+col.label+sortArrow('priority')+'</th>';
+    } else {
+      th+='<th>'+col.label+'</th>';
+    }
+  });
   th+='<th></th></tr>';
   return {cg:cg, th:th, colspan:baseColspan};
 }
@@ -1111,6 +1189,16 @@ function renderPlanTable(){
       saCb.replaceWith(saCb.cloneNode(true)); // remove old listeners
       document.getElementById('selectAllCb').addEventListener('change',function(){selectAll(this.checked);});
     }
+    tbl && tbl.querySelectorAll('.sortable-th').forEach(function(th){
+      th.addEventListener('click',function(){
+        const field=this.dataset.sort;
+        if(sortField===field){ sortDir=(sortDir==='asc'?'desc':'asc'); }
+        else { sortField=field; sortDir='asc'; }
+        const selEl=document.getElementById('planSortSel');
+        if(selEl) selEl.value = sortField ? (sortField+'-'+sortDir) : '';
+        renderPlanTable();
+      });
+    });
   },0);
   
   // Inject/update bulk bar
@@ -1230,6 +1318,27 @@ function renderPlanTable(){
 
   const grp={};
   rows.forEach(function(t){if(!grp[t.dir])grp[t.dir]=[];grp[t.dir].push(t);});
+  if(sortField){
+    Object.keys(grp).forEach(function(d){
+      grp[d].sort(function(a,b){
+        let av,bv;
+        if(sortField==='due'){
+          av=parseDeadline(a.due); bv=parseDeadline(b.due);
+          av=av?av.getTime():Infinity; bv=bv?bv.getTime():Infinity;
+        } else if(sortField==='st'){
+          av=(a.st||''); bv=(b.st||'');
+        } else if(sortField==='priority'){
+          const rank={high:0,med:1,low:2,'':3};
+          av=rank[a.priority||'']; bv=rank[b.priority||''];
+        } else {
+          av=(a.name||'').toLowerCase(); bv=(b.name||'').toLowerCase();
+        }
+        if(av<bv) return sortDir==='asc'?-1:1;
+        if(av>bv) return sortDir==='asc'?1:-1;
+        return 0;
+      });
+    });
+  }
   const nc=hdr.colspan;
   let h='';
   Object.keys(grp).forEach(function(d){
@@ -1263,7 +1372,7 @@ function repRowHTML(t){
     +(fl?(fl.split('\\n').map((u,i)=>u.trim()).filter(Boolean).map((u,i)=>'<div class="fl-link"><a href="'+esc(u)+'" target="_blank" title="'+esc(u)+'">🔗 '+shortUrl(u)+'</a><button class="fl-rm" data-i="'+i+'">✕</button></div>').join('')):'')
     +'<div class="fl-add"><input class="fl-input" placeholder="https://..."><button class="fl-btn">+ Добавить</button></div>'
     +'</div>';
-  return '<tr class="dr'+(t._late?' overdue':'')+'" data-id="'+t.id+'">'
+  return '<tr class="dr'+(t._late?' overdue':'')+(!t._late&&t._soon?' due-soon':'')+'" data-id="'+t.id+'">'
     +'<td style="font-weight:600;font-size:14px">'+esc(t.name)+'<br><span style="font-size:11px;color:#9F9B9D;font-weight:400">'+esc(t.dir)+'</span></td>'
     +'<td><textarea class="ce" data-f="res_plan" rows="1" placeholder="Плановый результат...">'+esc(t.res_plan)+'</textarea></td>'
     +'<td><textarea class="ce" data-f="res_actual" rows="1" placeholder="Фактический результат...">'+esc(t.res_actual)+'</textarea></td>'
@@ -1570,7 +1679,7 @@ document.getElementById('pickDirOk').addEventListener('click',function(){
   createTaskInDir(dir);
 });
 function createTaskInDir(dir){
-  const newTask={id:nextId++,dir:dir,name:'',desc:'',res_plan:'',due:'',agree:'',budget:'',st:'В ожидании',res_actual:'',files:'',comments:''};
+  const newTask={id:nextId++,dir:dir,name:'',desc:'',res_plan:'',due:'',agree:'',budget:'',st:'В ожидании',res_actual:'',files:'',comments:'',priority:''};
   periods[pid].tasks.push(newTask);
   dbSaveTask(newTask,pid);
   planDir=dir; renderAll();
@@ -1599,7 +1708,7 @@ document.getElementById('newDirOk').addEventListener('click',function(){
     return;
   }
   // Create first empty task in this new section
-  const newTask={id:nextId++,dir:name,name:'',desc:'',res_plan:'',due:'',agree:'',budget:'',st:'В ожидании',res_actual:'',files:'',comments:''};
+  const newTask={id:nextId++,dir:name,name:'',desc:'',res_plan:'',due:'',agree:'',budget:'',st:'В ожидании',res_actual:'',files:'',comments:'',priority:''};
   periods[pid].tasks.push(newTask);
   dbSaveTask(newTask,pid);
   document.getElementById('newDirModal').classList.remove('open');
@@ -1628,6 +1737,53 @@ document.querySelectorAll('.main-tab').forEach(function(tab){
   });
 });
 document.getElementById('planSearch').addEventListener('input',function(){planQ=this.value;renderPlanTable();});
+document.getElementById('planSortSel').addEventListener('change',function(){
+  const v=this.value;
+  if(!v){ sortField=null; sortDir='asc'; }
+  else { const parts=v.split('-'); sortField=parts[0]; sortDir=parts[1]; }
+  renderPlanTable();
+});
+
+// ── GLOBAL SEARCH ACROSS ALL PERIODS ────────────────────────────────────────
+document.getElementById('globalSearchBtn').addEventListener('click',function(){
+  document.getElementById('globalSearchInp').value='';
+  document.getElementById('globalSearchResults').innerHTML='<div style="color:var(--gray400);font-size:12px;padding:8px">Начни вводить название задачи...</div>';
+  document.getElementById('globalSearchModal').classList.add('open');
+  setTimeout(function(){ document.getElementById('globalSearchInp').focus(); },100);
+});
+document.getElementById('globalSearchClose').addEventListener('click',function(){
+  document.getElementById('globalSearchModal').classList.remove('open');
+});
+document.getElementById('globalSearchInp').addEventListener('input',function(){
+  const q=this.value.trim().toLowerCase();
+  const resBox=document.getElementById('globalSearchResults');
+  if(q.length<2){ resBox.innerHTML='<div style="color:var(--gray400);font-size:12px;padding:8px">Введи минимум 2 символа...</div>'; return; }
+  const results=[];
+  Object.values(periods).forEach(function(p){
+    p.tasks.forEach(function(t){
+      if((t.name||'').toLowerCase().includes(q) || (t.desc||'').toLowerCase().includes(q)){
+        results.push({periodId:p.id, periodLabel:p.label, task:t});
+      }
+    });
+  });
+  if(!results.length){ resBox.innerHTML='<div style="color:var(--gray400);font-size:12px;padding:8px">Ничего не найдено</div>'; return; }
+  resBox.innerHTML=results.slice(0,50).map(function(r){
+    return '<div class="gs-item" data-pid="'+esc(r.periodId)+'" data-tid="'+r.task.id+'">'
+      +'<div class="gs-item-name">'+esc(r.task.name||'(без названия)')+'</div>'
+      +'<div class="gs-item-meta">'+esc(r.periodLabel)+' · '+esc(r.task.dir)+' · '+esc(r.task.st)+'</div>'
+      +'</div>';
+  }).join('');
+  resBox.querySelectorAll('.gs-item').forEach(function(el){
+    el.addEventListener('click',function(){
+      const targetPid=this.dataset.pid;
+      const targetTid=+this.dataset.tid;
+      document.getElementById('globalSearchModal').classList.remove('open');
+      pid=targetPid; planDir='all'; repDir='all';
+      renderAll();
+      setTimeout(function(){ openDetail(targetTid); },150);
+    });
+  });
+});
 document.getElementById('repSearch').addEventListener('input',function(){repQ=this.value;renderRepTable();});
 document.getElementById('exportPlan').addEventListener('click',function(){exportCSV(false);});
 document.getElementById('exportRep').addEventListener('click',function(){exportCSV(true);});
@@ -1777,6 +1933,7 @@ async function dbSaveTask(task, periodId) {
     due: task.due || '', agree: task.agree || '', budget: task.budget || '',
     st: task.st || 'В ожидании', res_actual: task.res_actual || '',
     files: task.files || '', comments: task.comments || '',
+    priority: task.priority || '',
     sort_order: task.id, updated_at: new Date().toISOString()
   });
   if (error) console.error('saveTask:', error);
@@ -1813,7 +1970,7 @@ async function initFromDB() {
         if (p) p.tasks.push({ id: t.id, dir: t.dir, name: t.task_name,
           desc: t.description, res_plan: t.res_plan, due: t.due,
           agree: t.agree, budget: t.budget, st: t.st,
-          res_actual: t.res_actual, files: t.files, comments: t.comments });
+          res_actual: t.res_actual, files: t.files, comments: t.comments, priority: t.priority||'' });
       });
       pid = Object.keys(periods)[0];
       // Critical fix: recompute nextId from actual data to avoid ID collisions
