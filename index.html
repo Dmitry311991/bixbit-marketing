@@ -918,7 +918,7 @@ function bindPlanRow(tr){
     autoH(el);
     el.addEventListener('input',function(){var t=task();if(t)t[this.dataset.f]=this.value;autoH(this);updateKPI();syncRepRow(id);debounceSave(id,pid);});
   });
-  tr.querySelectorAll('input.ce,input.fi').forEach(function(el){
+  tr.querySelectorAll('input.fi').forEach(function(el){
     el.addEventListener('input',function(){var t=task();if(t)t[this.dataset.f]=this.value;syncRepRow(id);debounceSave(id,pid);});
   });
   tr.querySelectorAll('select.sst').forEach(function(sel){
