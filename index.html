@@ -2148,7 +2148,7 @@ async function logHistory(taskId, periodId, field, oldValue, newValue){
 async function loadHistory(taskId){
   try{
     const { data, error } = await supa.from('task_history')
-      .select('*').eq('task_id', taskId).order('changed_at', { ascending:false }).limit(30);
+      .select('*').eq('task_id', taskId).not('field','in','(__cmt__,__cmt_resolve__,__cmt_del__)').order('changed_at', { ascending:false }).limit(30);
     if(error){ console.error('loadHistory:', error); return []; }
     return data || [];
   }catch(e){ console.error('loadHistory error:', e); return []; }
@@ -2403,6 +2403,261 @@ body.dark .panel>.period-bar,body.dark .panel>.filter-bar,body.dark .panel>.bulk
   window.addEventListener('resize',sch);
   new MutationObserver(sch).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   upd();
+})();
+</script>
+<!-- Комментарии как в Google Таблицах: обсуждение поверх задачи, счётчики и непрочитанные -->
+<style id="bx-cmt-css">
+td[data-label="Задача"]{position:relative}
+.bx-cmt-mark{position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 11px 11px 0;border-color:transparent #F5A623 transparent transparent;pointer-events:none}
+.bx-cmt-mark.unread{border-color:transparent #E5352B transparent transparent}
+.bx-cmt-chip{display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:2px 8px;border-radius:10px;border:1px solid #E6E6E6;background:#fff;font-size:11px;color:#4A4A4A;cursor:pointer;line-height:16px;font-family:inherit}
+.bx-cmt-chip:hover{border-color:#0040DD;color:#0040DD}
+.bx-cmt-chip.has{background:#FFF6E5;border-color:#F5C46B;color:#8A5A00}
+.bx-cmt-chip.unread{background:#FDECEB;border-color:#F2A19B;color:#B42318;font-weight:600}
+.bx-cmt-chip.empty{opacity:0;transition:opacity .15s}
+tr.dr:hover .bx-cmt-chip.empty{opacity:1}
+.bx-cmt-pop{position:fixed;z-index:1000;width:360px;max-height:70vh;display:flex;flex-direction:column;background:#fff;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.06);font-size:13px;color:#1a1a1a}
+.bx-cmt-head{padding:10px 12px;border-bottom:1px solid #EEE;display:flex;align-items:flex-start;gap:8px}
+.bx-cmt-title{flex:1;font-weight:600;font-size:13px;line-height:1.3}
+.bx-cmt-x,.bx-cmt-resolve{border:none;background:none;cursor:pointer;font-size:12px;color:#4A4A4A;padding:2px 6px;border-radius:6px;font-family:inherit;white-space:nowrap}
+.bx-cmt-resolve{color:#0B7A3B;border:1px solid #B7E1C6}
+.bx-cmt-resolve:hover{background:#EAF7EF}
+.bx-cmt-x:hover{background:#F2F2F2}
+.bx-cmt-list{overflow:auto;padding:6px 12px;flex:1}
+.bx-cmt-item{padding:8px 0;border-bottom:1px solid #F3F3F3}
+.bx-cmt-item:last-child{border-bottom:none}
+.bx-cmt-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:#8A8A8A;margin-bottom:3px}
+.bx-cmt-ava{width:22px;height:22px;border-radius:50%;background:#0040DD;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none}
+.bx-cmt-author{font-weight:600;color:#1a1a1a;font-size:12px}
+.bx-cmt-new{background:#E5352B;color:#fff;border-radius:6px;padding:0 5px;font-size:10px}
+.bx-cmt-text{white-space:pre-wrap;word-break:break-word;line-height:1.4;padding-left:28px}
+.bx-cmt-del{margin-left:auto;border:none;background:none;color:#B0B0B0;cursor:pointer;font-size:11px}
+.bx-cmt-del:hover{color:#E5352B}
+.bx-cmt-empty{color:#8A8A8A;padding:10px 0;font-size:12px}
+.bx-cmt-old{font-size:11px;color:#0040DD;cursor:pointer;padding:6px 0;background:none;border:none;font-family:inherit}
+.bx-cmt-resolved .bx-cmt-text{color:#8A8A8A}
+.bx-cmt-form{border-top:1px solid #EEE;padding:10px 12px}
+.bx-cmt-form textarea{width:100%;box-sizing:border-box;min-height:58px;resize:vertical;border:1px solid #D6D6D6;border-radius:8px;padding:8px;font:inherit;font-size:13px;outline:none}
+.bx-cmt-form textarea:focus{border-color:#0040DD}
+.bx-cmt-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:6px}
+.bx-cmt-send{background:#0040DD;color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit}
+.bx-cmt-send:disabled{opacity:.5;cursor:default}
+.bx-cmt-hint{font-size:10px;color:#9F9B9D;margin-right:auto;align-self:center}
+#bxCmtBtn{position:relative}
+.bx-cmt-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;background:#E5352B;color:#fff;font-size:11px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 0 0 2px var(--mag)}
+.bx-cmt-inbox{position:fixed;z-index:1000;width:400px;max-height:70vh;overflow:auto;background:#fff;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.06);color:#1a1a1a;font-size:13px}
+.bx-ib-head{padding:10px 12px;border-bottom:1px solid #EEE;font-weight:600;display:flex;align-items:center;gap:8px;position:sticky;top:0;background:inherit}
+.bx-ib-tabs{margin-left:auto;display:flex;gap:4px}
+.bx-ib-tabs button{border:1px solid #E6E6E6;background:#fff;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;font-family:inherit}
+.bx-ib-tabs button.on{background:#0040DD;color:#fff;border-color:#0040DD}
+.bx-ib-item{padding:9px 12px;border-bottom:1px solid #F3F3F3;cursor:pointer}
+.bx-ib-item:hover{background:#F6F8FF}
+.bx-ib-task{font-weight:600;font-size:12px;display:flex;align-items:center;gap:6px}
+.bx-ib-dot{width:8px;height:8px;border-radius:50%;background:#E5352B;flex:none}
+.bx-ib-sub{font-size:11px;color:#8A8A8A;margin-top:2px}
+.bx-ib-last{font-size:12px;color:#4A4A4A;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bx-ib-empty{padding:16px 12px;color:#8A8A8A}
+tr.dr.bx-cmt-flash td{animation:bxflash 1.6s ease}
+@keyframes bxflash{0%,40%{background:#FFF3C4}100%{background:transparent}}
+body.dark .bx-cmt-pop,body.dark .bx-cmt-inbox{background:var(--dk-surface);color:var(--dk-text);box-shadow:0 8px 28px rgba(0,0,0,.6),0 0 0 1px var(--dk-border)}
+body.dark .bx-cmt-head,body.dark .bx-cmt-form,body.dark .bx-ib-head{border-color:var(--dk-border)}
+body.dark .bx-cmt-item,body.dark .bx-ib-item{border-color:var(--dk-border2)}
+body.dark .bx-cmt-author{color:var(--dk-text)}
+body.dark .bx-cmt-form textarea{background:var(--dk-surface2);color:var(--dk-text);border-color:var(--dk-border)}
+body.dark .bx-cmt-chip{background:var(--dk-surface2);color:var(--dk-text2);border-color:var(--dk-border)}
+body.dark .bx-cmt-chip.has{background:#3D3220;color:#F5C46B;border-color:#7A5A20}
+body.dark .bx-cmt-chip.unread{background:#4A2020;color:#FF8A80;border-color:#8A3030}
+body.dark .bx-ib-item:hover{background:var(--dk-hover)}
+body.dark .bx-ib-tabs button{background:var(--dk-surface2);color:var(--dk-text);border-color:var(--dk-border)}
+body.dark .bx-ib-tabs button.on{background:var(--dk-accent);border-color:var(--dk-accent)}
+body.dark .bx-cmt-x{color:var(--dk-text2)}
+body.dark .bx-cmt-x:hover{background:var(--dk-surface2)}
+</style>
+<script>
+(function(){
+  var F_CMT='__cmt__', F_RES='__cmt_resolve__', F_DEL='__cmt_del__';
+  var rows=[];           // все записи комментариев из task_history
+  var byTask={};         // taskId -> {open:[], resolved:[], lastResolve}
+  var pop=null, popTask=null, showResolved=false, inbox=null, inboxTab='unread';
+  function me(){ try{return (currentUserEmail||'').toLowerCase();}catch(e){return '';} }
+  function h(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function nick(email){ email=email||''; return email.split('@')[0]||email||'?'; }
+  function fmt(iso){ var d=new Date(iso); if(isNaN(d)) return ''; var now=new Date(); var p=function(n){return (n<10?'0':'')+n;};
+    var t=p(d.getHours())+':'+p(d.getMinutes()); if(d.toDateString()===now.toDateString()) return 'сегодня '+t;
+    return p(d.getDate())+'.'+p(d.getMonth()+1)+(d.getFullYear()!==now.getFullYear()?'.'+d.getFullYear():'')+' '+t; }
+  function seenKey(){ return 'bx_cmt_seen_'+me(); }
+  function getSeen(){ try{return JSON.parse(localStorage.getItem(seenKey())||'{}');}catch(e){return {};} }
+  function setSeen(taskId){ try{var s=getSeen(); s[taskId]=new Date().toISOString(); localStorage.setItem(seenKey(),JSON.stringify(s));}catch(e){} }
+  function allPeriods(){ try{return periods;}catch(e){return {};} }
+  function curPid(){ try{return pid;}catch(e){return null;} }
+  function findTask(taskId){ var P=allPeriods(); for(var k in P){ var t=(P[k].tasks||[]).find(function(x){return x.id===taskId;}); if(t) return {task:t,periodId:k}; } return null; }
+
+  function rebuild(){
+    byTask={}; var deleted={};
+    rows.forEach(function(r){ if(r.field===F_DEL) deleted[String(r.old_value)]=true; });
+    rows.forEach(function(r){
+      var b=byTask[r.task_id]||(byTask[r.task_id]={all:[],lastResolve:null,lastResolveBy:'',periodId:r.period_id});
+      if(r.field===F_RES){ if(!b.lastResolve||r.changed_at>b.lastResolve){ b.lastResolve=r.changed_at; b.lastResolveBy=r.changed_by; } }
+      else if(r.field===F_CMT && !deleted[String(r.id)]) b.all.push(r);
+    });
+    Object.keys(byTask).forEach(function(k){ var b=byTask[k];
+      b.all.sort(function(a,c){return a.changed_at<c.changed_at?-1:1;});
+      b.open=b.all.filter(function(r){return !b.lastResolve||r.changed_at>b.lastResolve;});
+      b.resolved=b.all.filter(function(r){return b.lastResolve&&r.changed_at<=b.lastResolve;});
+    });
+  }
+  function unreadFor(taskId){
+    var b=byTask[taskId]; if(!b||!b.open) return 0; var s=getSeen()[taskId]||''; var m=me();
+    return b.open.filter(function(r){return (r.changed_by||'').toLowerCase()!==m && r.changed_at>s;}).length;
+  }
+  function totalUnread(){ var n=0; Object.keys(byTask).forEach(function(k){ if(allPeriods() && findTask(+k)) n+=unreadFor(+k)?1:0; }); return n; }
+
+  async function load(){
+    try{
+      var res=await supa.from('task_history').select('id,task_id,period_id,field,old_value,new_value,changed_by,changed_at')
+        .in('field',[F_CMT,F_RES,F_DEL]).order('changed_at',{ascending:true}).limit(5000);
+      if(res.error){ console.error('comments load:',res.error); return; }
+      rows=res.data||[]; rebuild(); decorate(); updateBadge();
+      if(pop&&popTask) renderPop(); if(inbox) renderInbox();
+    }catch(e){ console.error('comments load error:',e); }
+  }
+  async function insert(field,taskId,periodId,text,oldValue){
+    var res=await supa.from('task_history').insert({task_id:taskId,period_id:periodId,field:field,old_value:oldValue||'',new_value:text||'',changed_by:me()||'неизвестно'}).select();
+    if(res.error){ alert('Не удалось сохранить комментарий: '+res.error.message); return false; }
+    if(res.data&&res.data[0]){ rows.push(res.data[0]); rebuild(); decorate(); updateBadge(); }
+    return true;
+  }
+
+  // ── Маркеры в строках таблицы ──
+  function decorate(){
+    document.querySelectorAll('tr.dr[data-id]').forEach(function(tr){
+      var id=+tr.dataset.id; var td=tr.querySelector('td[data-label="Задача"]'); if(!td) return;
+      var b=byTask[id]; var n=b&&b.open?b.open.length:0; var u=unreadFor(id);
+      var mark=td.querySelector(':scope > .bx-cmt-mark'); var chip=td.querySelector(':scope > .bx-cmt-chip');
+      if(!chip){ chip=document.createElement('button'); chip.type='button'; chip.className='bx-cmt-chip'; td.appendChild(chip);
+        chip.addEventListener('click',function(e){ e.stopPropagation(); openPop(id,td); }); }
+      var cls='bx-cmt-chip'+(n?(u?' unread':' has'):' empty');
+      var txt=n?('💬 '+n+(u?' · новых '+u:'')):'💬 Комментировать';
+      if(chip.className!==cls) chip.className=cls; if(chip.textContent!==txt) chip.textContent=txt;
+      chip.title=n?'Открыть обсуждение':'Оставить комментарий к задаче';
+      if(n){ if(!mark){ mark=document.createElement('span'); td.appendChild(mark);} var mc='bx-cmt-mark'+(u?' unread':''); if(mark.className!==mc) mark.className=mc; }
+      else if(mark) mark.remove();
+    });
+  }
+
+  // ── Окно обсуждения ──
+  function place(el,anchor){
+    var r=anchor.getBoundingClientRect(); var w=el.offsetWidth, hh=el.offsetHeight, vw=innerWidth, vh=innerHeight;
+    var left=r.right+8; if(left+w>vw-8) left=Math.max(8,r.left-w-8); if(left<8) left=8;
+    var top=Math.min(Math.max(8,r.top),vh-hh-8); el.style.left=left+'px'; el.style.top=Math.max(8,top)+'px';
+  }
+  function closePop(){ if(pop){ pop.remove(); pop=null; popTask=null; showResolved=false; } }
+  function openPop(taskId,anchor){
+    closeInbox(); if(pop&&popTask===taskId){ closePop(); return; } closePop();
+    popTask=taskId; pop=document.createElement('div'); pop.className='bx-cmt-pop'; pop._anchor=anchor;
+    pop.addEventListener('mousedown',function(e){e.stopPropagation();});
+    document.body.appendChild(pop); renderPop(); setSeen(taskId); decorate(); updateBadge();
+    var ta=pop.querySelector('textarea'); if(ta) ta.focus();
+  }
+  function itemHTML(r,resolved){
+    var mine=(r.changed_by||'').toLowerCase()===me(); var s=getSeen()[popTask]||'';
+    var isNew=!resolved && !mine && pop && pop._seenBefore!==undefined && r.changed_at>pop._seenBefore;
+    return '<div class="bx-cmt-item'+(resolved?' bx-cmt-resolved':'')+'"><div class="bx-cmt-meta"><span class="bx-cmt-ava">'+h(nick(r.changed_by).slice(0,1).toUpperCase())+'</span>'
+      +'<span class="bx-cmt-author">'+h(nick(r.changed_by))+'</span><span>'+h(fmt(r.changed_at))+'</span>'+(isNew?'<span class="bx-cmt-new">новый</span>':'')
+      +(mine?'<button class="bx-cmt-del" data-del="'+r.id+'" title="Удалить комментарий">Удалить</button>':'')+'</div>'
+      +'<div class="bx-cmt-text">'+h(r.new_value)+'</div></div>';
+  }
+  function renderPop(){
+    if(!pop) return; var f=findTask(popTask); var name=f?(f.task.name||'Без названия'):'Задача';
+    if(pop._seenBefore===undefined) pop._seenBefore=getSeen()[popTask]||'';
+    var b=byTask[popTask]||{open:[],resolved:[]}; var draft=pop.querySelector('textarea'); var draftVal=draft?draft.value:'';
+    var html='<div class="bx-cmt-head"><div class="bx-cmt-title">'+h(name)+'</div>'
+      +(b.open&&b.open.length?'<button class="bx-cmt-resolve" title="Закрыть обсуждение — оно уйдёт в решённые">✓ Решено</button>':'')
+      +'<button class="bx-cmt-x" title="Закрыть">✕</button></div><div class="bx-cmt-list">';
+    if(b.resolved&&b.resolved.length){
+      html+='<button class="bx-cmt-old">'+(showResolved?'Скрыть решённые':'Показать решённые ('+b.resolved.length+')')+'</button>';
+      if(showResolved) html+=b.resolved.map(function(r){return itemHTML(r,true);}).join('')+'<div class="bx-cmt-meta" style="padding:4px 0">✓ Решено: '+h(nick(b.lastResolveBy))+', '+h(fmt(b.lastResolve))+'</div>';
+    }
+    html+=(b.open&&b.open.length)?b.open.map(function(r){return itemHTML(r,false);}).join(''):'<div class="bx-cmt-empty">Пока нет открытых комментариев. Напишите первый — поля задачи при этом не меняются.</div>';
+    html+='</div><div class="bx-cmt-form"><textarea placeholder="'+((b.open&&b.open.length)?'Ответить…':'Комментарий к задаче…')+'"></textarea>'
+      +'<div class="bx-cmt-actions"><span class="bx-cmt-hint">Ctrl/⌘ + Enter — отправить</span><button class="bx-cmt-x bx-cmt-cancel">Отмена</button><button class="bx-cmt-send">Комментировать</button></div></div>';
+    pop.innerHTML=html;
+    var ta=pop.querySelector('textarea'); ta.value=draftVal;
+    var list=pop.querySelector('.bx-cmt-list'); list.scrollTop=list.scrollHeight;
+    pop.querySelectorAll('.bx-cmt-x').forEach(function(x){ x.onclick=closePop; });
+    var old=pop.querySelector('.bx-cmt-old'); if(old) old.onclick=function(){ showResolved=!showResolved; renderPop(); };
+    var rs=pop.querySelector('.bx-cmt-resolve'); if(rs) rs.onclick=async function(){ var f2=findTask(popTask); rs.disabled=true;
+      if(await insert(F_RES,popTask,f2?f2.periodId:(b.periodId||''),'')){ renderPop(); } };
+    pop.querySelectorAll('[data-del]').forEach(function(btn){ btn.onclick=async function(){ if(!confirm('Удалить комментарий?')) return;
+      var f2=findTask(popTask); if(await insert(F_DEL,popTask,f2?f2.periodId:'','',btn.dataset.del)) renderPop(); }; });
+    var send=pop.querySelector('.bx-cmt-send');
+    var submit=async function(){ var v=ta.value.trim(); if(!v) return; send.disabled=true; var f2=findTask(popTask);
+      if(await insert(F_CMT,popTask,f2?f2.periodId:(curPid()||''),v)){ ta.value=''; setSeen(popTask); renderPop(); } else send.disabled=false; };
+    send.onclick=submit;
+    ta.addEventListener('keydown',function(e){ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); submit(); } if(e.key==='Escape') closePop(); });
+    place(pop,pop._anchor&&document.body.contains(pop._anchor)?pop._anchor:(rowCell(popTask)||document.body));
+  }
+  function rowCell(taskId){ var tr=document.querySelector('.panel.on tr.dr[data-id="'+taskId+'"]'); return tr?tr.querySelector('td[data-label="Задача"]'):null; }
+
+  // ── Кнопка в шапке и список обсуждений ──
+  function ensureBtn(){
+    if(document.getElementById('bxCmtBtn')) return;
+    var top=document.querySelector('.hdr-top'); if(!top) return;
+    var btn=document.createElement('button'); btn.className='theme-btn'; btn.id='bxCmtBtn'; btn.title='Комментарии к задачам';
+    btn.innerHTML='💬 Комментарии<span class="bx-cmt-badge" id="bxCmtBadge"></span>';
+    var before=document.getElementById('themeBtn'); top.insertBefore(btn,before||null);
+    btn.addEventListener('click',function(e){ e.stopPropagation(); if(inbox){closeInbox();return;} openInbox(btn); });
+  }
+  function updateBadge(){ ensureBtn(); var el=document.getElementById('bxCmtBadge'); if(!el) return; var n=totalUnread();
+    el.textContent=n>99?'99+':String(n); el.style.display=n?'inline-flex':'none';
+    var btn=document.getElementById('bxCmtBtn'); if(btn) btn.title=n?('Задач с новыми комментариями: '+n):'Комментарии к задачам'; }
+  function closeInbox(){ if(inbox){ inbox.remove(); inbox=null; } }
+  function openInbox(btn){
+    closePop(); inbox=document.createElement('div'); inbox.className='bx-cmt-inbox'; inbox._btn=btn;
+    inbox.addEventListener('mousedown',function(e){e.stopPropagation();}); document.body.appendChild(inbox);
+    inboxTab=totalUnread()?'unread':'open'; renderInbox();
+  }
+  function renderInbox(){
+    if(!inbox) return; var items=[];
+    Object.keys(byTask).forEach(function(k){ var id=+k; var b=byTask[k]; var f=findTask(id); if(!f||!b.open||!b.open.length) return;
+      var u=unreadFor(id); if(inboxTab==='unread'&&!u) return; var last=b.open[b.open.length-1];
+      items.push({id:id,f:f,u:u,last:last,n:b.open.length}); });
+    items.sort(function(a,c){ return (c.u?1:0)-(a.u?1:0) || (a.last.changed_at<c.last.changed_at?1:-1); });
+    var P=allPeriods();
+    var html='<div class="bx-ib-head">💬 Обсуждения<div class="bx-ib-tabs"><button data-tab="unread" class="'+(inboxTab==='unread'?'on':'')+'">Новые</button><button data-tab="open" class="'+(inboxTab==='open'?'on':'')+'">Все открытые</button></div></div>';
+    html+=items.length?items.map(function(it){ var per=P[it.f.periodId]; return '<div class="bx-ib-item" data-id="'+it.id+'"><div class="bx-ib-task">'+(it.u?'<span class="bx-ib-dot"></span>':'')+h(it.f.task.name||'Без названия')+'</div>'
+      +'<div class="bx-ib-sub">'+h(per?per.label:'')+' · '+h(it.f.task.dir||'')+' · '+it.n+' комм.'+(it.u?', новых '+it.u:'')+'</div>'
+      +'<div class="bx-ib-last"><b>'+h(nick(it.last.changed_by))+':</b> '+h(it.last.new_value)+'</div></div>'; }).join('')
+      :'<div class="bx-ib-empty">'+(inboxTab==='unread'?'Новых комментариев нет.':'Открытых обсуждений нет.')+'</div>';
+    inbox.innerHTML=html;
+    inbox.querySelectorAll('[data-tab]').forEach(function(b){ b.onclick=function(){ inboxTab=b.dataset.tab; renderInbox(); }; });
+    inbox.querySelectorAll('.bx-ib-item').forEach(function(el){ el.onclick=function(){ goTo(+el.dataset.id); }; });
+    var r=inbox._btn.getBoundingClientRect(); inbox.style.top=(r.bottom+8)+'px'; inbox.style.left=Math.max(8,Math.min(r.right-inbox.offsetWidth,innerWidth-inbox.offsetWidth-8))+'px';
+  }
+  function goTo(taskId){
+    closeInbox(); var f=findTask(taskId); if(!f) return;
+    try{ if(pid!==f.periodId){ pid=f.periodId; planDir='all'; repDir='all'; renderAll(); } else if(typeof planDir!=='undefined'&&planDir!=='all'){ planDir='all'; repDir='all'; renderAll(); } }catch(e){}
+    setTimeout(function(){ var td=rowCell(taskId); if(!td) return; var tr=td.parentElement;
+      tr.scrollIntoView({block:'center',behavior:'smooth'}); tr.classList.remove('bx-cmt-flash'); void tr.offsetWidth; tr.classList.add('bx-cmt-flash');
+      setTimeout(function(){ openPop(taskId,td); },450); },120);
+  }
+
+  // ── Общие обработчики ──
+  document.addEventListener('mousedown',function(){ closePop(); closeInbox(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closePop(); closeInbox(); } });
+  window.addEventListener('resize',function(){ if(pop&&pop._anchor) place(pop,pop._anchor); if(inbox) renderInbox(); });
+  window.addEventListener('scroll',function(){ if(pop&&pop._anchor&&document.body.contains(pop._anchor)) place(pop,pop._anchor); },{passive:true});
+  var q=false; new MutationObserver(function(){ if(q) return; q=true; requestAnimationFrame(function(){ q=false; decorate(); if(pop&&pop._anchor&&!document.body.contains(pop._anchor)){ var td=rowCell(popTask); if(td) pop._anchor=td; } }); })
+    .observe(document.body,{childList:true,subtree:true});
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) load(); });
+  setInterval(function(){ if(!document.hidden) load(); },45000);
+  try{ supa.channel('bixbit-comments').on('postgres_changes',{event:'INSERT',schema:'public',table:'task_history'},function(p){
+      var r=p&&p.new; if(!r||[F_CMT,F_RES,F_DEL].indexOf(r.field)<0) return; if(rows.some(function(x){return x.id===r.id;})) return;
+      rows.push(r); rebuild(); decorate(); updateBadge(); if(pop) renderPop(); if(inbox) renderInbox(); }).subscribe(); }catch(e){}
+  // Старт: ждём вход в аккаунт и загрузку задач
+  var tries=0; (function boot(){ tries++; var ok=false; try{ ok=!!(currentUserEmail&&Object.keys(periods||{}).length); }catch(e){}
+    if(ok){ ensureBtn(); load(); } else setTimeout(boot,tries<240?500:2000); })();
+  window.bxComments={reload:load};
 })();
 </script>
 </body>
