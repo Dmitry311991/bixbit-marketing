@@ -2415,6 +2415,7 @@ td[data-label="Задача"]{position:relative}
 .bx-cmt-chip.has{background:#FFF6E5;border-color:#F5C46B;color:#8A5A00}
 .bx-cmt-chip.unread{background:#FDECEB;border-color:#F2A19B;color:#B42318;font-weight:600}
 .bx-cmt-chip.empty{opacity:0;transition:opacity .15s}
+.bx-cmt-chip.done{background:#F2F7F3;border-color:#C9E3D2;color:#3C7A52}
 .bx-cmt-prev{margin-top:4px;padding:5px 8px;border-left:3px solid #F5A623;background:#FFFBF2;border-radius:0 6px 6px 0;font-size:11px;line-height:1.35;color:#4A4A4A;cursor:pointer;word-break:break-word}
 .bx-cmt-prev b{color:#1a1a1a}
 .bx-cmt-prev.unread{border-left-color:#E5352B;background:#FDF1F0}
@@ -2544,9 +2545,10 @@ body.dark .bx-cmt-x:hover{background:var(--dk-surface2)}
       var mark=td.querySelector(':scope > .bx-cmt-mark'); var chip=td.querySelector(':scope > .bx-cmt-chip');
       if(!chip){ chip=document.createElement('button'); chip.type='button'; chip.className='bx-cmt-chip'; td.appendChild(chip);
         chip.addEventListener('click',function(e){ e.stopPropagation(); openPop(id,td); }); }
-      var cls='bx-cmt-chip'+(n?(u?' unread':' has'):' empty');
+      var rn=b&&b.resolved?b.resolved.length:0;
+      var cls='bx-cmt-chip'+(n?(u?' unread':' has'):(rn?' done':' empty'));
       var last=n?b.open[n-1]:null;
-      var txt=n?('💬 '+n+' '+plural(n,'комментарий','комментария','комментариев')+(u?' · новых '+u:'')):'💬 Комментировать';
+      var txt=n?('💬 '+n+' '+plural(n,'комментарий','комментария','комментариев')+(u?' · новых '+u:'')):(rn?('✓ '+rn+' '+plural(rn,'комментарий','комментария','комментариев')+' · решено'):'💬 Комментировать');
       if(chip.className!==cls) chip.className=cls; if(chip.textContent!==txt) chip.textContent=txt;
       chip.title=n?'Открыть обсуждение':'Оставить комментарий к задаче';
       if(n){ if(!mark){ mark=document.createElement('span'); td.appendChild(mark);} var mc='bx-cmt-mark'+(u?' unread':''); if(mark.className!==mc) mark.className=mc; }
