@@ -2415,6 +2415,13 @@ td[data-label="Задача"]{position:relative}
 .bx-cmt-chip.has{background:#FFF6E5;border-color:#F5C46B;color:#8A5A00}
 .bx-cmt-chip.unread{background:#FDECEB;border-color:#F2A19B;color:#B42318;font-weight:600}
 .bx-cmt-chip.empty{opacity:0;transition:opacity .15s}
+.bx-cmt-prev{margin-top:4px;padding:5px 8px;border-left:3px solid #F5A623;background:#FFFBF2;border-radius:0 6px 6px 0;font-size:11px;line-height:1.35;color:#4A4A4A;cursor:pointer;word-break:break-word}
+.bx-cmt-prev b{color:#1a1a1a}
+.bx-cmt-prev.unread{border-left-color:#E5352B;background:#FDF1F0}
+.bx-cmt-prev:hover{background:#FFF3DC}
+body.dark .bx-cmt-prev{background:#2E2A22;color:var(--dk-text2)}
+body.dark .bx-cmt-prev b{color:var(--dk-text)}
+body.dark .bx-cmt-prev.unread{background:#3A2222}
 tr.dr:hover .bx-cmt-chip.empty{opacity:1}
 .bx-cmt-pop{position:fixed;z-index:1000;width:360px;max-height:70vh;display:flex;flex-direction:column;background:#fff;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.06);font-size:13px;color:#1a1a1a}
 .bx-cmt-head{padding:10px 12px;border-bottom:1px solid #EEE;display:flex;align-items:flex-start;gap:8px}
@@ -2481,6 +2488,7 @@ body.dark .bx-cmt-x:hover{background:var(--dk-surface2)}
   var pop=null, popTask=null, showResolved=false, inbox=null, inboxTab='unread';
   function me(){ try{return (currentUserEmail||'').toLowerCase();}catch(e){return '';} }
   function h(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function plural(n,a,b,c){ var m=n%10, m2=n%100; return (m===1&&m2!==11)?a:(m>=2&&m<=4&&(m2<12||m2>14))?b:c; }
   function nick(email){ email=email||''; return email.split('@')[0]||email||'?'; }
   function fmt(iso){ var d=new Date(iso); if(isNaN(d)) return ''; var now=new Date(); var p=function(n){return (n<10?'0':'')+n;};
     var t=p(d.getHours())+':'+p(d.getMinutes()); if(d.toDateString()===now.toDateString()) return 'сегодня '+t;
@@ -2537,11 +2545,19 @@ body.dark .bx-cmt-x:hover{background:var(--dk-surface2)}
       if(!chip){ chip=document.createElement('button'); chip.type='button'; chip.className='bx-cmt-chip'; td.appendChild(chip);
         chip.addEventListener('click',function(e){ e.stopPropagation(); openPop(id,td); }); }
       var cls='bx-cmt-chip'+(n?(u?' unread':' has'):' empty');
-      var txt=n?('💬 '+n+(u?' · новых '+u:'')):'💬 Комментировать';
+      var last=n?b.open[n-1]:null;
+      var txt=n?('💬 '+n+' '+plural(n,'комментарий','комментария','комментариев')+(u?' · новых '+u:'')):'💬 Комментировать';
       if(chip.className!==cls) chip.className=cls; if(chip.textContent!==txt) chip.textContent=txt;
       chip.title=n?'Открыть обсуждение':'Оставить комментарий к задаче';
       if(n){ if(!mark){ mark=document.createElement('span'); td.appendChild(mark);} var mc='bx-cmt-mark'+(u?' unread':''); if(mark.className!==mc) mark.className=mc; }
       else if(mark) mark.remove();
+      var prev=td.querySelector(':scope > .bx-cmt-prev');
+      if(n){ if(!prev){ prev=document.createElement('div'); prev.className='bx-cmt-prev'; td.appendChild(prev);
+          prev.addEventListener('click',function(e){ e.stopPropagation(); openPop(id,td); }); }
+        var t2=last.new_value||''; if(t2.length>70) t2=t2.slice(0,70)+'…';
+        var ph='<b>'+h(nick(last.changed_by))+'</b> · '+h(fmt(last.changed_at))+'<br>'+h(t2);
+        if(prev._h!==ph){ prev.innerHTML=ph; prev._h=ph; } prev.className='bx-cmt-prev'+(u?' unread':''); }
+      else if(prev) prev.remove();
     });
   }
 
