@@ -2371,5 +2371,39 @@ supa.auth.onAuthStateChange((event,session)=>{
   <button id="undoToastBtn">Отменить</button>
 </div>
 </div><!-- /appRoot -->
+<!-- Закреплённая панель: шапка, периоды, фильтры и заголовок таблицы видны при прокрутке -->
+<style id="sticky-panel-css">
+.hdr{position:sticky;top:0;z-index:60}
+.panel>.period-bar,.panel>.filter-bar,.panel>.bulk-bar{position:sticky;z-index:50;background:var(--gray50)}
+.panel>.period-bar{margin-bottom:0;padding:6px 0 18px}
+.panel>.filter-bar{margin-bottom:0;padding-bottom:14px}
+body.dark .panel>.period-bar,body.dark .panel>.filter-bar,body.dark .panel>.bulk-bar{background:var(--dk-bg)}
+.panel>.tbl-wrap{overflow:visible}
+.panel>.tbl-wrap>table{overflow:clip}
+.panel>.tbl-wrap thead th{position:sticky;z-index:40;box-shadow:0 1px 0 rgba(0,0,0,.08)}
+</style>
+<script>
+(function(){
+  function upd(){
+    var h=document.querySelector('.hdr');
+    var top=h?h.offsetHeight:0;
+    document.querySelectorAll('.panel.on').forEach(function(p){
+      var t=top;
+      Array.prototype.forEach.call(p.children,function(c){
+        if(c.matches('.period-bar,.filter-bar,.bulk-bar')){
+          c.style.top=t+'px';
+          if(c.offsetHeight>0&&getComputedStyle(c).display!=='none')t+=c.offsetHeight;
+        }
+      });
+      p.querySelectorAll('thead th').forEach(function(th){th.style.top=t+'px';});
+    });
+  }
+  var q=false;
+  function sch(){if(q)return;q=true;requestAnimationFrame(function(){q=false;upd();});}
+  window.addEventListener('resize',sch);
+  new MutationObserver(sch).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+  upd();
+})();
+</script>
 </body>
 </html>
