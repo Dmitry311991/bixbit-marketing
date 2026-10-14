@@ -2148,7 +2148,7 @@ async function logHistory(taskId, periodId, field, oldValue, newValue){
 async function loadHistory(taskId){
   try{
     const { data, error } = await supa.from('task_history')
-      .select('*').eq('task_id', taskId).not('field','in','(__cmt__,__cmt_resolve__,__cmt_del__)').order('changed_at', { ascending:false }).limit(30);
+      .select('*').eq('task_id', taskId).not('field','in','(__cmt__,__cmt_resolve__,__cmt_del__,__cmt_seen__)').order('changed_at', { ascending:false }).limit(30);
     if(error){ console.error('loadHistory:', error); return []; }
     return data || [];
   }catch(e){ console.error('loadHistory error:', e); return []; }
@@ -2483,7 +2483,9 @@ body.dark .bx-cmt-x:hover{background:var(--dk-surface2)}
 </style>
 <script>
 (function(){
-  var F_CMT='__cmt__', F_RES='__cmt_resolve__', F_DEL='__cmt_del__';
+  var F_CMT='__cmt__', F_RES='__cmt_resolve__', F_DEL='__cmt_del__', F_SEEN='__cmt_seen__';
+  var dbSeen={};          // taskId -> время прочтения из базы (общее для всех устройств пользователя)
+  function ts(x){ var t=Date.parse(x||''); return isNaN(t)?0:t; }
   var rows=[];           // все записи комментариев из task_history
   var byTask={};         // taskId -> {open:[], resolved:[], lastResolve}
   var pop=null, popTask=null, showResolved=false, inbox=null, inboxTab='unread';
@@ -2495,8 +2497,17 @@ body.dark .bx-cmt-x:hover{background:var(--dk-surface2)}
     var t=p(d.getHours())+':'+p(d.getMinutes()); if(d.toDateString()===now.toDateString()) return 'сегодня '+t;
     return p(d.getDate())+'.'+p(d.getMonth()+1)+(d.getFullYear()!==now.getFullYear()?'.'+d.getFullYear():'')+' '+t; }
   function seenKey(){ return 'bx_cmt_seen_'+me(); }
-  function getSeen(){ try{return JSON.parse(localStorage.getItem(seenKey())||'{}');}catch(e){return {};} }
-  function setSeen(taskId){ try{var s=getSeen(); s[taskId]=new Date().toISOString(); localStorage.setItem(seenKey(),JSON.stringify(s));}catch(e){} }
+  function localSeen(){ try{return JSON.parse(localStorage.getItem(seenKey())||'{}');}catch(e){return {};} }
+  function getSeen(){ var l=localSeen(), out={}; Object.keys(l).forEach(function(k){out[k]=l[k];});
+    Object.keys(dbSeen).forEach(function(k){ if(ts(dbSeen[k])>ts(out[k])) out[k]=dbSeen[k]; }); return out; }
+  function latestOpen(taskId){ var b=byTask[taskId]; if(!b||!b.open||!b.open.length) return 0; return ts(b.open[b.open.length-1].changed_at); }
+  async function saveSeenDB(taskId,periodId){
+    if(!me()) return; if(latestOpen(taskId)<=ts(dbSeen[taskId])) return; // в базе уже отмечено
+    try{ var res=await supa.from('task_history').insert({task_id:taskId,period_id:periodId||'',field:F_SEEN,old_value:'',new_value:'',changed_by:me()}).select('changed_at');
+      if(!res.error&&res.data&&res.data[0]) dbSeen[taskId]=res.data[0].changed_at; }catch(e){}
+  }
+  function setSeen(taskId){ try{var l=localSeen(); l[taskId]=new Date().toISOString(); localStorage.setItem(seenKey(),JSON.stringify(l));}catch(e){}
+    var f=findTask(taskId); saveSeenDB(taskId,f?f.periodId:''); }
   function allPeriods(){ try{return periods;}catch(e){return {};} }
   function curPid(){ try{return pid;}catch(e){return null;} }
   function findTask(taskId){ var P=allPeriods(); for(var k in P){ var t=(P[k].tasks||[]).find(function(x){return x.id===taskId;}); if(t) return {task:t,periodId:k}; } return null; }
@@ -2516,8 +2527,8 @@ body.dark .bx-cmt-x:hover{background:var(--dk-surface2)}
     });
   }
   function unreadFor(taskId){
-    var b=byTask[taskId]; if(!b||!b.open) return 0; var s=getSeen()[taskId]||''; var m=me();
-    return b.open.filter(function(r){return (r.changed_by||'').toLowerCase()!==m && r.changed_at>s;}).length;
+    var b=byTask[taskId]; if(!b||!b.open) return 0; var s=ts(getSeen()[taskId]); var m=me();
+    return b.open.filter(function(r){return (r.changed_by||'').toLowerCase()!==m && ts(r.changed_at)>s;}).length;
   }
   function totalUnread(){ var n=0; Object.keys(byTask).forEach(function(k){ if(allPeriods() && findTask(+k)) n+=unreadFor(+k)?1:0; }); return n; }
 
@@ -2526,7 +2537,12 @@ body.dark .bx-cmt-x:hover{background:var(--dk-surface2)}
       var res=await supa.from('task_history').select('id,task_id,period_id,field,old_value,new_value,changed_by,changed_at')
         .in('field',[F_CMT,F_RES,F_DEL]).order('changed_at',{ascending:true}).limit(5000);
       if(res.error){ console.error('comments load:',res.error); return; }
-      rows=res.data||[]; rebuild(); decorate(); updateBadge();
+      rows=res.data||[]; rebuild();
+      if(me()){ var sr=await supa.from('task_history').select('task_id,changed_at').eq('field',F_SEEN).eq('changed_by',me()).order('changed_at',{ascending:true}).limit(5000);
+        if(!sr.error){ dbSeen={}; (sr.data||[]).forEach(function(x){ if(ts(x.changed_at)>ts(dbSeen[x.task_id])) dbSeen[x.task_id]=x.changed_at; });
+          // перенос старых отметок из браузера в базу (один раз)
+          var l=localSeen(); Object.keys(l).forEach(function(k){ var id=+k; if(latestOpen(id)&&latestOpen(id)<=ts(l[k])&&latestOpen(id)>ts(dbSeen[id])){ var f=findTask(id); saveSeenDB(id,f?f.periodId:''); } }); } }
+      decorate(); updateBadge();
       if(pop&&popTask) renderPop(); if(inbox) renderInbox();
     }catch(e){ console.error('comments load error:',e); }
   }
@@ -2579,7 +2595,7 @@ body.dark .bx-cmt-x:hover{background:var(--dk-surface2)}
   }
   function itemHTML(r,resolved){
     var mine=(r.changed_by||'').toLowerCase()===me(); var s=getSeen()[popTask]||'';
-    var isNew=!resolved && !mine && pop && pop._seenBefore!==undefined && r.changed_at>pop._seenBefore;
+    var isNew=!resolved && !mine && pop && pop._seenBefore!==undefined && ts(r.changed_at)>ts(pop._seenBefore);
     return '<div class="bx-cmt-item'+(resolved?' bx-cmt-resolved':'')+'"><div class="bx-cmt-meta"><span class="bx-cmt-ava">'+h(nick(r.changed_by).slice(0,1).toUpperCase())+'</span>'
       +'<span class="bx-cmt-author">'+h(nick(r.changed_by))+'</span><span>'+h(fmt(r.changed_at))+'</span>'+(isNew?'<span class="bx-cmt-new">новый</span>':'')
       +(mine?'<button class="bx-cmt-del" data-del="'+r.id+'" title="Удалить комментарий">Удалить</button>':'')+'</div>'
@@ -2670,7 +2686,8 @@ body.dark .bx-cmt-x:hover{background:var(--dk-surface2)}
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) load(); });
   setInterval(function(){ if(!document.hidden) load(); },45000);
   try{ supa.channel('bixbit-comments').on('postgres_changes',{event:'INSERT',schema:'public',table:'task_history'},function(p){
-      var r=p&&p.new; if(!r||[F_CMT,F_RES,F_DEL].indexOf(r.field)<0) return; if(rows.some(function(x){return x.id===r.id;})) return;
+      var r=p&&p.new; if(r&&r.field===F_SEEN){ if((r.changed_by||'').toLowerCase()===me()&&ts(r.changed_at)>ts(dbSeen[r.task_id])){ dbSeen[r.task_id]=r.changed_at; decorate(); updateBadge(); if(inbox) renderInbox(); } return; }
+      if(!r||[F_CMT,F_RES,F_DEL].indexOf(r.field)<0) return; if(rows.some(function(x){return x.id===r.id;})) return;
       rows.push(r); rebuild(); decorate(); updateBadge(); if(pop) renderPop(); if(inbox) renderInbox(); }).subscribe(); }catch(e){}
   // Старт: ждём вход в аккаунт и загрузку задач
   var tries=0; (function boot(){ tries++; var ok=false; try{ ok=!!(currentUserEmail&&Object.keys(periods||{}).length); }catch(e){}
